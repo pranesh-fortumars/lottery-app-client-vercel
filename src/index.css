@@ -25,10 +25,12 @@ body {
   max-width: var(--max-width);
   margin: 0 auto;
   min-height: 100vh;
-  background: white;
-  box-shadow: 0 0 20px rgba(0,0,0,0.1);
+  background: #f9f9f9;
+  box-shadow: 0 0 40px rgba(0,0,0,0.15);
   display: flex;
   flex-direction: column;
+  position: relative;
+  overflow-x: hidden;
 }
 
 .font-condensed {

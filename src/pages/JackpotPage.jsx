@@ -1,234 +1,130 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Home, User, Minus, Plus, ShoppingCart, Clock, Trophy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PageWrapper from '../components/PageWrapper';
-
-const CountdownTimer = ({ drawTime, onStatusChange }) => {
-  const [timeLeft, setTimeLeft] = useState('');
-  const [isClosed, setIsClosed] = useState(false);
-
-  useEffect(() => {
-    const calculateTime = () => {
-      const now = new Date();
-      const parts = drawTime.match(/(\d+):(\d+)\s*(AM|PM)/);
-      if (!parts) return;
-      
-      let hours = parseInt(parts[1]);
-      const minutes = parseInt(parts[2]);
-      const ampm = parts[3];
-      
-      if (ampm === 'PM' && hours !== 12) hours += 12;
-      if (ampm === 'AM' && hours === 12) hours = 0;
-      
-      const drawDate = new Date();
-      drawDate.setHours(hours, minutes, 0, 0);
-
-      const diff = drawDate - now;
-      
-      if (diff <= 10 * 60 * 1000) {
-        setIsClosed(true);
-        setTimeLeft('Closed');
-        onStatusChange && onStatusChange(true);
-        return;
-      }
-
-      const h = Math.floor(diff / (1000 * 60 * 60));
-      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const s = Math.floor((diff % (1000 * 60)) / 1000);
-
-      setTimeLeft(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
-      setIsClosed(false);
-      onStatusChange && onStatusChange(false);
-    };
-
-    calculateTime();
-    const timer = setInterval(calculateTime, 1000);
-    return () => clearInterval(timer);
-  }, [drawTime, onStatusChange]);
-
-  return (
-    <div className="text-[0.65rem] font-black text-brand-red">
-      {timeLeft}
-    </div>
-  );
-};
+import { ScrollText, Gavel, ShoppingCart } from 'lucide-react';
 
 const JackpotPage = () => {
   const navigate = useNavigate();
-  const [selectedSlot, setSelectedSlot] = useState('01:00 PM');
-  const [slotStatus, setSlotStatus] = useState({});
+  const [activeSlot, setActiveSlot] = useState('01.30 PM');
 
-  const timeSlots = [
-    { time: '01:00 PM', label: 'DEAR LOTTERY' },
-    { time: '06:00 PM', label: 'DEAR LOTTERY' },
-    { time: '08:00 PM', label: 'DEAR LOTTERY' }
+  const slots = [
+    { time: '10.30 AM', status: 'closed' },
+    { time: '11.30 AM', status: 'active' },
+    { time: '12.30 PM', status: 'active' },
+    { time: '01.30 PM', status: 'active' },
+    { time: '03.30 PM', status: 'active' },
+    { time: '05.30 PM', status: 'active' },
+    { time: '06.30 PM', status: 'active' },
+    { time: '07.30 PM', status: 'active' },
   ];
 
-  const handleQtyChange = (board, delta) => {
-    // Basic qty state logic removed for brevity, keeping UI structure
-  };
+  const BettingSection = ({ title, winText, price, digits = 1, showBox = false }) => (
+    <div className="border-[1.5px] border-red-500 rounded-2xl p-4 mb-6 bg-white shadow-xl relative overflow-hidden">
+      <div className="flex gap-4 mb-5 border-b border-gray-100 pb-3">
+        <img src="https://img.icons8.com/color/64/000000/treasure-chest.png" alt="Chest" className="w-14 h-14 drop-shadow-md" />
+        <div className="flex-grow">
+          <h3 className="text-gray-900 font-black text-lg leading-tight uppercase tracking-tight">
+            {title} <span className="text-[#ff004d]">{winText}</span>
+          </h3>
+          <p className="text-[#ff004d] font-black text-xl">₹ {price}</p>
+        </div>
+        <button className="bg-gray-700 text-white text-[10px] px-3 py-1.5 rounded-lg h-fit font-black uppercase shadow-sm active:scale-95">Random</button>
+      </div>
+
+      <div className="space-y-5">
+        {[1, 2, 3].map((row) => (
+          <div key={row} className="flex items-center justify-between gap-2">
+             <div className="flex gap-1.5 shrink-0">
+                <div className="w-9 h-9 bg-[#ff004d] rounded-full flex items-center justify-center text-white font-black text-sm shadow-md">A</div>
+                {digits >= 2 && <div className="w-9 h-9 bg-[#ff004d] rounded-full flex items-center justify-center text-white font-black text-sm shadow-md">B</div>}
+                {digits >= 3 && <div className="w-9 h-9 bg-[#ff004d] rounded-full flex items-center justify-center text-white font-black text-sm shadow-md">C</div>}
+             </div>
+             
+             <div className="flex gap-1 shrink-0">
+                {Array(digits).fill(0).map((_, i) => (
+                  <input key={i} type="text" className="w-9 h-9 border-[1.5px] border-gray-950 rounded-lg text-center text-xl font-black bg-white focus:border-[#ff004d] outline-none" placeholder="-" />
+                ))}
+             </div>
+
+             <div className="flex items-center border-[1.5px] border-gray-700 rounded-lg overflow-hidden h-9 bg-gray-50">
+                <button className="bg-gray-600 text-white px-2.5 font-black text-xl hover:bg-gray-700 active:bg-gray-800">-</button>
+                <div className="w-9 text-center font-black text-lg text-gray-900">1</div>
+                <button className="bg-gray-600 text-white px-2.5 font-black text-xl hover:bg-gray-700 active:bg-gray-800">+</button>
+             </div>
+
+             <div className="flex gap-1 shrink-0">
+                {showBox && <button className="bg-[#ff004d] text-white px-3 py-2 rounded-lg font-black text-[11px] uppercase shadow-md active:scale-95">BOX</button>}
+                <button className="bg-[#ff004d] text-white px-3 py-2 rounded-lg font-black text-[11px] uppercase shadow-md active:scale-95">ADD</button>
+             </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
-    <PageWrapper title="DIAMOND JACKPOT LOTTERY">
-      {/* Draw info bar */}
-      <div className="bg-[#fce4ec] text-[#d81b60] font-bold text-center py-2 text-xs uppercase tracking-tighter">
-        Draw before 10 minutes of draw/result.
-      </div>
-
-      {/* Rules/Results Sidebar Buttons */}
-      <div className="flex gap-4 p-4">
-        <button 
-          className="flex-1 bg-brand-pink text-white font-black py-2 rounded-lg flex items-center justify-center gap-2 font-condensed uppercase tracking-wider text-sm shadow-md"
-          onClick={() => navigate('/rules')}
-        >
-          <Clock size={16} /> Rules
-        </button>
-        <button 
-          className="flex-1 bg-brand-pink text-white font-black py-2 rounded-lg flex items-center justify-center gap-2 font-condensed uppercase tracking-wider text-sm shadow-md"
-          onClick={() => navigate('/results')}
-        >
-          <Trophy size={16} /> Results
-        </button>
-      </div>
-
-      {/* Slots Selection */}
-      <div className="flex justify-between px-4 mb-4 gap-2">
-        {timeSlots.map((slot, idx) => (
-          <div 
-            key={idx} 
-            className={`slot-card cursor-pointer ${selectedSlot === slot.time ? 'bg-pink-50' : 'bg-white'}`}
-            onClick={() => !slotStatus[slot.time] && setSelectedSlot(slot.time)}
-            style={{ 
-              borderColor: slotStatus[slot.time] ? '#ccc' : (selectedSlot === slot.time ? '#f42464' : '#ff0000'),
-              borderWidth: selectedSlot === slot.time ? '2px' : '1px',
-              opacity: slotStatus[slot.time] ? 0.6 : 1
-            }}
-          >
-            <div className="slot-time">{slot.time}</div>
-            <div className="slot-label">{slot.label}</div>
-            <CountdownTimer 
-              drawTime={slot.time} 
-              onStatusChange={(closed) => setSlotStatus(prev => ({...prev, [slot.time]: closed}))} 
-            />
-          </div>
-        ))}
-      </div>
-
-      {/* Game Selection Area */}
-      <div className="px-4 space-y-4 pb-32">
-        {/* Single Digit Section */}
-        <div className="jackpot-card">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-2">
-              <div className="text-3xl">💰</div>
-              <div>
-                <h3 className="font-bold text-sm">Single Digit <span className="text-brand-red">Win ₹100</span></h3>
-                <p className="text-xs text-brand-red font-black">₹11.00</p>
-              </div>
-            </div>
-            <button className="bg-gray-500 text-white text-[10px] px-2 py-1 rounded font-bold uppercase tracking-tighter">Random</button>
-          </div>
-          
-          {['A', 'B', 'C'].map(board => (
-            <div key={board} className="flex items-center justify-between mb-3 last:mb-0">
-              <div className="jackpot-board-circle">{board}</div>
-              <input type="text" className="jackpot-input" maxLength="1" />
-              <div className="jackpot-qty-control">
-                <button className="bg-gray-600 text-white px-2 py-1"><Minus size={14}/></button>
-                <span className="px-3 font-black">1</span>
-                <button className="bg-gray-600 text-white px-2 py-1"><Plus size={14}/></button>
-              </div>
-              <button className="jackpot-btn-red">ADD</button>
-            </div>
-          ))}
+    <PageWrapper title="DIAMOND JACKPOT LOTTERY" showNav={true}>
+      <div className="bg-[#f9f9f9] min-h-screen">
+        
+        {/* Purchase Window Banner - Exact Image 2 */}
+        <div className="bg-[#fce4ec] py-3 px-4 shadow-sm border-b border-white/50 text-center">
+           <p className="text-white bg-[#ff1c74] inline-block px-5 py-2 rounded-full text-xs font-black tracking-wide uppercase drop-shadow-sm">
+             Lot purchase time is open till 10:45 AM and Results...
+           </p>
         </div>
 
-        {/* Double Digits Section */}
-        <div className="jackpot-card">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-2">
-              <div className="text-3xl">💰</div>
-              <div>
-                <h3 className="font-bold text-sm">Double Digits <span className="text-brand-red">Win ₹1000</span></h3>
-                <p className="text-xs text-brand-red font-black">₹11.00</p>
-              </div>
-            </div>
-            <button className="bg-gray-500 text-white text-[10px] px-2 py-1 rounded font-bold uppercase">Random</button>
+        <div className="p-4">
+          {/* Action Buttons - Top of Image 2 */}
+          <div className="flex gap-4 mb-8">
+             <button onClick={() => navigate('/rules')} className="flex-1 bg-[#ff004d] text-white py-3 rounded-xl flex items-center justify-center gap-2 font-black shadow-[0_8px_20px_rgba(255,0,77,0.25)] uppercase tracking-tight">
+                <Gavel size={20} strokeWidth={3} /> Rules
+             </button>
+             <button onClick={() => navigate('/results')} className="flex-1 bg-[#ff004d] text-white py-3 rounded-xl flex items-center justify-center gap-2 font-black shadow-[0_8px_20px_rgba(255,0,77,0.25)] uppercase tracking-tight">
+                <ScrollText size={20} strokeWidth={3} /> Results
+             </button>
           </div>
-          
-          {['AB', 'BC', 'AC'].map(board => (
-            <div key={board} className="flex items-center justify-between mb-3 last:mb-0">
-              <div className="flex gap-1">
-                <div className="jackpot-board-circle">{board[0]}</div>
-                <div className="jackpot-board-circle">{board[1]}</div>
+
+          {/* Slots Grid - Exactly like Image 2 */}
+          <div className="grid grid-cols-4 gap-3 mb-8">
+            {slots.map((slot, idx) => (
+              <div 
+                key={idx}
+                onClick={() => slot.status === 'active' && setActiveSlot(slot.time)}
+                className={`border-[2px] rounded-2xl p-2.5 text-center transition-all cursor-pointer h-[70px] flex flex-col justify-center ${
+                  slot.status === 'active' 
+                    ? (activeSlot === slot.time ? 'border-[#ff004d] bg-[#fff0f5] shadow-lg ring-2 ring-[#ff004d]/10' : 'border-[#ff004d] bg-white shadow-sm hover:shadow-md') 
+                    : 'border-gray-200 bg-gray-100 opacity-50 grayscale'
+                }`}
+              >
+                <p className={`text-[12px] font-black leading-none mb-1 ${slot.status === 'active' ? 'text-red-500' : 'text-gray-500'}`}>{slot.time}</p>
+                <p className={`text-[8px] font-black uppercase leading-tight ${slot.status === 'active' ? 'text-red-500' : 'text-gray-400'}`}>
+                  {slot.status === 'active' ? 'Jackpot Lot' : 'Jackpot Lot closed'}
+                </p>
               </div>
-              <div className="flex gap-1">
-                 <input type="text" className="jackpot-input !w-[35px] !h-[35px] !text-base" maxLength="1" />
-                 <input type="text" className="jackpot-input !w-[35px] !h-[35px] !text-base" maxLength="1" />
-              </div>
-              <div className="jackpot-qty-control">
-                <button className="bg-gray-600 text-white px-2 py-1"><Minus size={14}/></button>
-                <span className="px-2 font-black">1</span>
-                <button className="bg-gray-600 text-white px-2 py-1"><Plus size={14}/></button>
-              </div>
-              <button className="jackpot-btn-red">ADD</button>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          {/* Betting Cards - Chest Icon Style */}
+          <BettingSection title="Single Digit" winText="Win ₹ 100" price="11.00" digits={1} />
+          <BettingSection title="Double Digits" winText="Win ₹ 1000" price="11.00" digits={2} />
+          <BettingSection title="Three Digits" winText="Win ₹ 10,000" price="0.00" digits={3} showBox={true} />
+          <BettingSection title="Three Digits" winText="Win ₹ 15,000" price="28.00" digits={3} showBox={true} />
+          <BettingSection title="Three Digits" winText="Win ₹ 30,000" price="55.00" digits={3} showBox={true} />
         </div>
 
-        {/* Three Digits Examples */}
-        {[10000, 15000].map((win, idx) => (
-          <div key={win} className="jackpot-card">
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-2">
-                <div className="text-3xl">💰</div>
-                <div>
-                  <h3 className="font-bold text-sm">Three Digits <span className="text-brand-red">Win ₹{win.toLocaleString()}</span></h3>
-                  <p className="text-xs text-brand-red font-black">₹{11 + idx * 5}.00</p>
-                </div>
-              </div>
-              <button className="bg-gray-500 text-white text-[10px] px-2 py-1 rounded font-bold uppercase">Random</button>
-            </div>
-            
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex gap-1">
-                <div className="jackpot-board-circle">A</div>
-                <div className="jackpot-board-circle">B</div>
-                <div className="jackpot-board-circle">C</div>
-              </div>
-              <div className="flex gap-1">
-                 <input type="text" className="jackpot-input !w-[35px] !h-[35px] !text-base" maxLength="1" />
-                 <input type="text" className="jackpot-input !w-[35px] !h-[35px] !text-base" maxLength="1" />
-                 <input type="text" className="jackpot-input !w-[35px] !h-[35px] !text-base" maxLength="1" />
-              </div>
-            </div>
+        {/* Static Pay Now Button at bottom of scroll (matches Image 2 and mobile standard) */}
+        <div className="px-4 pb-10">
+           <button 
+             onClick={() => navigate('/cart')}
+             className="w-full bg-[#ff004d] text-white py-4.5 rounded-2xl flex items-center justify-center gap-2 font-black text-2xl shadow-[0_12px_30px_rgba(255,0,77,0.4)] active:scale-95 transition-all uppercase tracking-widest font-condensed"
+           >
+             <ShoppingCart size={28} strokeWidth={3} /> Pay now
+           </button>
+        </div>
 
-            <div className="flex justify-between items-center">
-              <div className="jackpot-qty-control">
-                <button className="bg-gray-600 text-white px-2 py-1"><Minus size={14}/></button>
-                <span className="px-4 font-black">1</span>
-                <button className="bg-gray-600 text-white px-2 py-1"><Plus size={14}/></button>
-              </div>
-              <div className="flex gap-2">
-                <button className="bg-brand-pink text-white font-black px-4 py-2 rounded-lg text-xs uppercase shadow-md">BOX</button>
-                <button className="bg-brand-pink text-white font-black px-4 py-2 rounded-lg text-xs uppercase shadow-md">ADD</button>
-              </div>
-            </div>
-          </div>
-        ))}
+        <div className="h-20"></div>
       </div>
-
-      {/* Floating Pay Now Button */}
-      <div className="fixed bottom-32 left-0 right-0 px-8 flex justify-center pointer-events-none">
-        <button 
-          onClick={() => navigate('/cart')}
-          className="pointer-events-auto bg-brand-red text-white w-full max-w-[400px] py-4 rounded-xl font-black text-xl uppercase tracking-widest shadow-[0_8px_25px_rgba(255,0,0,0.4)] flex items-center justify-center gap-3 active:scale-95 transition-transform"
-        >
-          <ShoppingCart size={24} /> Pay Now
-        </button>
-      </div>
-
     </PageWrapper>
   );
 };

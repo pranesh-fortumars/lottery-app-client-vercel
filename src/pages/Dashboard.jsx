@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Mail, ChevronRight, Diamond } from 'lucide-react';
+import { Mail, Diamond } from 'lucide-react';
 
 const CountdownTimer = ({ drawTime }) => {
   const [timeLeft, setTimeLeft] = useState({ h: '00', m: '00', s: '00' });
@@ -41,10 +41,10 @@ const CountdownTimer = ({ drawTime }) => {
   }, [drawTime]);
 
   return (
-    <div className="flex gap-1">
-      <div className="bg-white text-black px-1.5 py-1 rounded text-sm font-bold shadow-sm">{timeLeft.h}</div>
-      <div className="bg-white text-black px-1.5 py-1 rounded text-sm font-bold shadow-sm">{timeLeft.m}</div>
-      <div className="bg-white text-black px-1.5 py-1 rounded text-sm font-bold shadow-sm">{timeLeft.s}</div>
+    <div className="flex gap-1.5 mt-2">
+      <div className="bg-white text-black w-10 h-10 flex items-center justify-center rounded-lg font-black text-xl shadow-inner border border-gray-100">{timeLeft.h}</div>
+      <div className="bg-white text-black w-10 h-10 flex items-center justify-center rounded-lg font-black text-xl shadow-inner border border-gray-100">{timeLeft.m}</div>
+      <div className="bg-white text-black w-10 h-10 flex items-center justify-center rounded-lg font-black text-xl shadow-inner border border-gray-100">{timeLeft.s}</div>
     </div>
   );
 };
@@ -53,75 +53,70 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   const games = [
-    { time: '01:00 PM', logo: 'DEAR', type: 'dear' },
-    { time: '06:00 PM', logo: 'DEAR', type: 'dear' },
-    { time: '08:00 PM', logo: 'DEAR', type: 'dear' },
-    { time: '03:00 PM', logo: 'Kerala Lottery', type: 'kerala' }
+    { time: '01:00 PM', name: 'DEAR', type: 'dear' },
+    { time: '06:00 PM', name: 'DEAR', type: 'dear' },
+    { time: '08:00 PM', name: 'DEAR', type: 'dear' },
+    { time: '03:00 PM', name: 'KERALA', type: 'kerala' }
   ];
 
   return (
-    <div className="bg-white">
-      {/* Hero Banner Area */}
-      <div className="p-3">
-        <div className="rounded-3xl overflow-hidden shadow-xl">
+    <div className="bg-[#f9f9f9]">
+      {/* Hero Banner Area - Using newly generated premium banner */}
+      <div className="p-4 pt-4">
+        <div className="rounded-3xl overflow-hidden shadow-2xl relative border-2 border-white/20">
            <img 
-            src="https://diamondjackpotlottery.com/banner-home.png" 
+            src="/hero-banner.png" 
             alt="Hero Banner" 
             className="w-full h-auto object-cover"
-            onError={(e) => { e.target.src = 'https://via.placeholder.com/450x200?text=DIAMOND+LOTTERY+BANNER'; }}
           />
         </div>
       </div>
 
-      {/* Red Promo Bar - Exactly like web */}
-      <div className="bg-brand-red p-2 flex justify-between items-center px-4">
-        <div className="animate-pulse flex items-center gap-2">
-           <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-           <span className="text-[10px] text-white font-bold tracking-widest uppercase">Hot jackpot alert!</span>
-        </div>
-        <Mail size={20} className="text-white" />
+      {/* Red Promo Bar - Exactly like Image 1 with text */}
+      <div className="bg-[#ff0000] mt-2 py-2.5 flex justify-center items-center px-6 shadow-md border-y border-white/10">
+        <Mail size={24} className="text-white fill-white" />
+        <span className="text-white font-black ml-2 text-sm tracking-widest uppercase animate-pulse">🔥 HOT JACKPOT ALERT : WIN BIG TODAY!</span>
       </div>
 
-      {/* 3 & 4 Digits Game Title */}
-      <div className="p-4 py-6 flex items-center gap-2">
-        <div className="w-8 h-8 bg-brand-red/10 rounded-full flex items-center justify-center">
-            <Diamond className="text-brand-red" size={20} />
+      {/* 3 & 4 Digits Game Title with Diamond Icon */}
+      <div className="px-5 py-6 flex items-center gap-3">
+        <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center shadow-lg">
+           <Diamond className="text-white fill-white" size={24} />
         </div>
-        <h2 className="text-2xl font-black text-brand-red font-condensed tracking-tight uppercase">3 & 4 Digits Game</h2>
+        <h2 className="text-3xl font-black text-red-600 font-sans tracking-tighter uppercase">3 & 4 Digits Game</h2>
       </div>
 
-      {/* Games Grid */}
-      <div className="grid grid-cols-2 gap-4 px-4 pb-8">
+      {/* Games Grid - Matching card design in Image 1 */}
+      <div className="grid grid-cols-2 gap-4 px-4 pb-10">
         {games.map((game, idx) => (
           <div 
             key={idx} 
-            className="game-card-gradient p-3 rounded-2xl relative overflow-hidden h-[130px] shadow-lg cursor-pointer active:scale-95 transition-all"
+            className="game-card-gradient p-4 rounded-3xl relative overflow-hidden h-[160px] shadow-2xl border border-white/5 cursor-pointer active:scale-95 transition-all"
             onClick={() => navigate(`/select/${idx + 1}`)}
           >
-            {/* Geometric Lines Overlay */}
-            <div className="absolute top-0 right-0 w-full h-full opacity-20 pointer-events-none">
-              <div className="absolute top-0 right-0 border-t-2 border-r-2 border-yellow-400 w-1/2 h-1/2 transform skew-x-[-20deg]"></div>
+            {/* Gold Geometric Lines Overlay - More visible */}
+            <div className="absolute top-0 right-0 w-full h-full opacity-40 pointer-events-none">
+              <div className="absolute top-0 right-0 border-t-[4px] border-r-[4px] border-yellow-500/80 w-[70%] h-[70%] transform skew-x-[-15deg]"></div>
             </div>
             
             <div className="relative z-10 flex flex-col justify-between h-full">
-              <div>
-                <p className="text-[10px] text-white/70 font-bold uppercase mb-1">Lottery Booking Time</p>
+              <div className="text-white">
+                <p className="text-[12px] font-black opacity-80 leading-tight uppercase tracking-tight">Next Lottery</p>
+                <p className="text-[12px] font-black opacity-80 mb-1 uppercase tracking-tight">Booking Time</p>
                 <CountdownTimer drawTime={game.time} />
               </div>
               
-              <div className="flex justify-between items-end">
-                <div className="text-white">
-                   <p className="text-[10px] font-black opacity-80">{game.time}</p>
-                </div>
+              <div className="flex justify-between items-end mt-3 border-t border-white/10 pt-2">
+                <span className="text-white text-[13px] font-black drop-shadow-md">{game.time}</span>
                 {game.type === 'dear' ? (
-                  <div className="flex flex-col items-end leading-none">
-                    <span className="text-yellow-400 font-black text-xs">DEAR</span>
-                    <span className="text-cyan-400 text-[8px] font-black">LOTTERY</span>
+                  <div className="flex flex-col items-end leading-[0.8]">
+                    <span className="text-yellow-400 font-black text-[18px] italic tracking-tighter shadow-black drop-shadow-sm">DEAR</span>
+                    <span className="text-cyan-400 text-[9px] font-black tracking-[0.2em]">LOTTERY</span>
                   </div>
                 ) : (
-                  <div className="bg-green-500/20 px-1.5 py-0.5 rounded-full border border-green-500/50 flex items-center gap-1">
-                     <div className="w-3 h-3 bg-green-500 rounded-full text-[8px] flex items-center justify-center font-bold text-black">K</div>
-                     <span className="text-green-500 text-[8px] font-bold">Kerala</span>
+                  <div className="flex items-center gap-2">
+                     <div className="w-7 h-7 bg-green-500 rounded-full flex items-center justify-center font-black text-[12px] text-black shadow-md">K</div>
+                     <span className="text-green-500 text-[10px] font-black leading-none uppercase">Kerala<br/>Lottery</span>
                   </div>
                 )}
               </div>
@@ -130,42 +125,41 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* Jackpot Title */}
-      <div className="p-4 py-2 flex items-center gap-2">
-        <div className="w-8 h-8 bg-brand-red/10 rounded-full flex items-center justify-center">
-            <Diamond className="text-brand-red" size={20} />
+      {/* Jackpot Title with Diamond Icon */}
+      <div className="px-5 py-4 flex items-center gap-3 border-t border-gray-100 pt-8">
+        <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center shadow-lg">
+           <Diamond className="text-white fill-white" size={24} />
         </div>
-        <h2 className="text-2xl font-black text-brand-red font-condensed tracking-tight uppercase">Jackpot</h2>
+        <h2 className="text-3xl font-black text-red-600 font-sans tracking-tighter uppercase">Jackpot</h2>
       </div>
 
-      {/* Jackpot Banner */}
+      {/* Jackpot Banner - New Generated Green Banner */}
       <div className="px-4 py-4">
         <div 
-           className="rounded-2xl overflow-hidden shadow-lg border-2 border-brand-red/20"
-           onClick={() => navigate('/jackpot')}
+          className="rounded-3xl overflow-hidden shadow-2xl border-2 border-green-500/20"
+          onClick={() => navigate('/jackpot')}
         >
           <img 
-            src="https://www.jackpotin.com/play-banner.png" 
-            alt="Jackpot Banner" 
+            src="/jackpot-banner.png" 
+            alt="Jackpot Play Banner" 
             className="w-full h-auto"
-            onError={(e) => { e.target.src = 'https://via.placeholder.com/450x150?text=JACKPOT+PLAY+NOW'; }}
           />
         </div>
       </div>
 
-      {/* Jackpot Choice Buttons - Premium Style */}
-      <div className="grid grid-cols-2 gap-4 px-8 pb-12">
+      {/* Exact Buttons from Image 1 with higher contrast */}
+      <div className="flex gap-4 px-10 pb-20 pt-4">
         <button 
-          className="bg-brand-pink text-white py-3 rounded-xl font-black text-lg shadow-lg active:scale-95 transition-all font-condensed"
+          className="bg-[#ff004d] text-white py-4 px-6 rounded-xl font-black text-xl shadow-[0_10px_20px_rgba(255,0,77,0.3)] active:scale-95 flex-1 uppercase tracking-tight"
           onClick={() => navigate('/jackpot')}
         >
-          WINS WINS
+          Wins Wins
         </button>
         <button 
-          className="bg-brand-pink text-white py-3 rounded-xl font-black text-lg shadow-lg active:scale-95 transition-all font-condensed"
+          className="bg-[#ff004d] text-white py-4 px-6 rounded-xl font-black text-xl shadow-[0_10px_20px_rgba(255,0,77,0.3)] active:scale-95 flex-1 uppercase tracking-tight"
           onClick={() => navigate('/jackpot')}
         >
-          JACKPOT
+          JackPot
         </button>
       </div>
     </div>
