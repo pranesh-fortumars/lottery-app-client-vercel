@@ -7,9 +7,10 @@ import LoginPage from './pages/LoginPage';
 import Dashboard from './pages/Dashboard';
 import SelectionPage from './pages/SelectionPage';
 import JackpotPage from './pages/JackpotPage';
+import SignupPage from './pages/SignupPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 // Remaining Pages - We will create these shortly
-const SignupPage = () => <div className="content"><h1>Signup</h1></div>;
 const RulesPage = () => (
   <div className="app-content">
     <div style={{ padding: '15px' }}>
@@ -69,36 +70,36 @@ const ResultsPageItems = () => {
   );
 };
 const CartPage = () => (
-  <div className="content">
-    <div className="card" style={{ textAlign: 'center', padding: '40px 20px' }}>
+  <div className="app-content">
+    <div style={{ textAlign: 'center', padding: '40px 20px' }}>
       <div style={{ marginBottom: '16px', color: 'var(--gray-dark)' }}>
         <ShoppingCart size={64} style={{ margin: '0 auto' }} />
       </div>
       <h2 style={{ marginBottom: '8px' }}>Your Cart is Empty</h2>
       <p style={{ color: 'var(--gray-dark)', marginBottom: '24px' }}>Looks like you haven't added any tickets yet.</p>
-      <NavLink to="/home" className="btn-primary" style={{ display: 'inline-block' }}>Start Playing</NavLink>
+      <NavLink to="/home" className="btn-add" style={{ display: 'inline-block', textDecoration: 'none' }}>Start Playing</NavLink>
     </div>
   </div>
 );
 const ProfilePage = () => (
-  <div className="content">
-    <div className="card" style={{ textAlign: 'center' }}>
-      <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'var(--gray-medium)', margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+  <div className="app-content">
+    <div style={{ textAlign: 'center', padding: '20px' }}>
+      <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#eee', margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <User size={40} color="var(--gray-dark)" />
       </div>
       <h2 style={{ marginBottom: '4px' }}>Pranesh</h2>
       <p style={{ color: 'var(--gray-dark)', marginBottom: '24px' }}>+91 9876543210</p>
-      <hr style={{ margin: '16px 0', border: 'none', borderTop: '1px solid var(--gray-medium)' }} />
+      <hr style={{ margin: '16px 0', border: 'none', borderTop: '1px solid #ddd' }} />
       <div style={{ textAlign: 'left' }}>
-        <div style={{ padding: '12px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '12px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee' }}>
           <span>Transaction History</span>
           <ChevronRight size={20} />
         </div>
-        <div style={{ padding: '12px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '12px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee' }}>
           <span>My Tickets</span>
           <ChevronRight size={20} />
         </div>
-        <div style={{ padding: '12px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--danger)' }}>
+        <div style={{ padding: '12px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'red' }}>
           <span>Logout</span>
           <LogOut size={20} />
         </div>
@@ -107,82 +108,16 @@ const ProfilePage = () => (
   </div>
 );
 
-const Header = ({ title, showBack = false }) => {
-  return (
-    <header className="main-header">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        {showBack ? (
-          <button onClick={() => window.history.back()} style={{ background: 'none', color: 'white', border: 'none', cursor: 'pointer' }}>
-            <HomeIcon size={24} />
-          </button>
-        ) : (
-          <HomeIcon size={24} />
-        )}
-        <h1>{title}</h1>
-      </div>
-      <div className="header-icons">
-        <Download size={22} style={{ cursor: 'pointer' }} />
-        <NavLink to="/profile" style={{ color: 'white' }}>
-          <User size={24} />
-        </NavLink>
-      </div>
-    </header>
-  );
-};
-
-const BottomNav = () => {
-  return (
-    <div className="bottom-nav-container">
-      <div className="promo-bar">
-        <Mail size={18} style={{ marginRight: 8 }} /> CLICK HERE TO MESSAGE
-      </div>
-      <nav className="nav-bar">
-        <NavLink to="/home" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <HomeIcon size={22} />
-          <span>Home</span>
-        </NavLink>
-        <NavLink to="/rules" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <ClipboardList size={22} />
-          <span>Rules</span>
-        </NavLink>
-        <NavLink to="/results" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <Trophy size={22} />
-          <span>Results</span>
-        </NavLink>
-        <NavLink to="/cart" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <ShoppingCart size={22} />
-          <span>Cart</span>
-        </NavLink>
-      </nav>
-    </div>
-  );
-};
-
-const PageWrapper = ({ children, title, showBack, showNav = true }) => {
-  return (
-    <motion.div 
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      transition={{ duration: 0.3 }}
-      className="app-container"
-    >
-      <Header title={title} showBack={showBack} />
-      {children}
-      {showNav && <BottomNav />}
-    </motion.div>
-  );
-};
+import PageWrapper from './components/PageWrapper';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
   return (
     <Router>
       <AnimatePresence mode="wait">
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           
           <Route path="/home" element={
             <PageWrapper title="Diamond Agency">
@@ -216,7 +151,7 @@ function App() {
 
           <Route path="/select/:gameId" element={<SelectionPage />} />
           <Route path="/jackpot" element={<JackpotPage />} />
-          <Route path="*" element={<Navigate to="/home" replace />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </AnimatePresence>
     </Router>

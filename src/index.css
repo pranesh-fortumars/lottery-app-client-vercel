@@ -1,18 +1,23 @@
 @import url('https://fonts.googleapis.com/css2?family=Arvo:wght@400;700&family=Bebas+Neue&display=swap');
 
 :root {
-  --primary-pink: #ff2056;
-  --dark-red: #ff0040;
-  --nav-gradient: linear-gradient(90deg, rgba(255,0,121,1) 0%, rgba(245,147,255,1) 61%, rgba(250,156,230,1) 100%);
-  --bg-body: #f7f7f7;
+  --brand-pink: #f42464;
+  --brand-red: #ff0000;
+  --input-bg: #f2f2f2;
+  --input-border: #cccccc;
+  --primary-pink: #f42464;
+  --dark-red: #ff0000;
+  --nav-gradient: linear-gradient(180deg, #f42464 0%, #ff5c8a 100%);
+  --bg-body: #ffffff;
   --bg-card: #ffffff;
-  --text-header: #ff0000;
-  --text-body: #000000;
+  --text-header: #ffffff;
+  --text-body: #333333;
   --white: #ffffff;
-  --gray-dark: #686868;
-  --border-red: #ff0040;
-  --header-height: 50px;
-  --footer-height: 90px;
+  --gray-light: #f2f2f2;
+  --gray-dark: #6c757d;
+  --border-red: #ff0000;
+  --header-height: 60px;
+  --footer-height: 120px;
   --max-width: 480px;
 }
 
@@ -23,12 +28,19 @@
 }
 
 body {
-  background-color: #e0e0e0;
+  font-family: 'Arial Black', 'Arial Bold', Gadget, sans-serif;
+  background-color: var(--bg-body);
   color: var(--text-body);
-  font-family: 'Arvo', serif;
+  margin: 0;
+  padding: 0;
   display: flex;
   justify-content: center;
   min-height: 100vh;
+}
+
+.font-condensed {
+  font-family: 'Impact', 'Arial Narrow Bold', sans-serif;
+  letter-spacing: 0.5px;
 }
 
 #root {
@@ -192,10 +204,117 @@ body {
 .btn-random {
   background-color: var(--gray-dark);
   color: white;
-  padding: 5px 15px;
+  padding: 4px 12px;
   border-radius: 5px;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   border: none;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+}
+
+.countdown-timer {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 5px;
+}
+
+.countdown-box {
+  background-color: white;
+  color: black;
+  width: 25px;
+  height: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 13px;
+  border-radius: 4px;
+}
+
+.auth-input-container {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.auth-icon-box {
+  padding: 12px;
+  background: #e9ecef;
+  border-right: 1px solid #ced4da;
+  display: flex;
+  align-items: center;
+  width: 60px;
+  justify-content: center;
+  color: #495057;
+  font-weight: 600;
+}
+
+.auth-input {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 1rem;
+  color: #333;
+}
+
+/* Home Card Styles */
+.game-card {
+  aspect-ratio: 16/10;
+  background-size: cover;
+  background-position: center;
+  border-radius: 12px;
+  position: relative;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+.game-card-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #001f3f 0%, #000c19 100%);
+  z-index: 1;
+}
+
+.game-card-content {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.game-card-title {
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.jackpot-btn {
+  background-color: #ff0044;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 0;
+  font-weight: 600;
+  font-size: 14px;
+  flex: 1;
+  cursor: pointer;
+  text-align: center;
 }
 
 /* Jackpot Specific Styles */

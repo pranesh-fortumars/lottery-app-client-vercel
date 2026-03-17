@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Home, User, Lock, Phone, ShoppingCart } from 'lucide-react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const LoginPage = () => {
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [password, setPassword] = useState('');
   const navigate = useNavigate();
+  const [mobile, setMobile] = useState('');
+  const [password, setPassword] = useState('');
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -14,80 +12,121 @@ const LoginPage = () => {
   };
 
   return (
-    <div style={{ backgroundColor: '#F5F5F5', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Login Header */}
-      <header style={{ height: '50px', background: 'var(--primary-pink)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 15px' }}>
-        <Home size={24} style={{ cursor: 'pointer' }} onClick={() => navigate('/home')} />
-        <h1 style={{ fontFamily: 'Bebas Neue', fontSize: '1.5rem', letterSpacing: '1px' }}>DIAMOND LOGIN</h1>
-        <User size={24} />
+    <div className="bg-white min-h-screen flex flex-col max-w-md mx-auto shadow-lg overflow-hidden w-full">
+      {/* BEGIN: MainHeader */}
+      <header className="bg-[#f42464] p-3 flex items-center justify-between text-white">
+        <div className="flex items-center gap-2">
+          {/* Home Icon */}
+          <svg className="h-8 w-8 cursor-pointer" fill="currentColor" viewBox="0 0 24 24" onClick={() => navigate('/home')}>
+            <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path>
+          </svg>
+          <h1 className="text-xl font-condensed font-black italic tracking-tighter">DIAMOND LOGIN</h1>
+        </div>
+        {/* User Profile Icon */}
+        <div onClick={() => navigate('/profile')} className="cursor-pointer">
+          <svg className="h-8 w-8" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path>
+          </svg>
+        </div>
       </header>
+      {/* END: MainHeader */}
 
-      <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-        <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '30px 20px', width: '100%', maxWidth: '400px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
-          {/* Mobile Input Group */}
-          <div style={{ display: 'flex', marginBottom: '15px', border: '1px solid #ddd', borderRadius: '5px', overflow: 'hidden' }}>
-            <div style={{ backgroundColor: '#eee', padding: '12px 15px', borderRight: '1px solid #ddd', fontSize: '0.9rem', fontWeight: 'bold' }}>
+      {/* BEGIN: LoginContainer */}
+      <main className="flex-grow p-4 mt-4">
+        <form className="space-y-4" onSubmit={handleLogin}>
+          {/* Phone Number Input Group */}
+          <div className="flex border border-[#cccccc] rounded overflow-hidden">
+            <div className="bg-[#f2f2f2] px-4 py-3 border-r border-[#cccccc] text-gray-700 font-bold">
               +91
             </div>
             <input 
-              type="tel" 
+              className="flex-grow p-3 outline-none border-none focus:ring-0 text-sm font-serif" 
               placeholder="Enter your mobile number" 
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              style={{ flex: 1, border: 'none', padding: '12px', outline: 'none', fontSize: '1rem', fontFamily: 'Arvo' }}
+              type="tel"
+              value={mobile}
+              onChange={(e) => setMobile(e.target.value)}
             />
           </div>
-
           {/* Password Input Group */}
-          <div style={{ display: 'flex', marginBottom: '25px', border: '1px solid #ddd', borderRadius: '5px', overflow: 'hidden' }}>
-            <div style={{ backgroundColor: '#eee', padding: '10px 15px', borderRight: '1px solid #ddd', color: '#333' }}>
-              <Lock size={20} />
+          <div className="flex border border-[#cccccc] rounded overflow-hidden">
+            <div className="bg-[#f2f2f2] px-4 py-3 border-r border-[#cccccc] flex items-center justify-center">
+              {/* Lock Icon */}
+              <svg className="h-4 w-4 text-black" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z"></path>
+              </svg>
             </div>
             <input 
-              type="password" 
+              className="flex-grow p-3 outline-none border-none focus:ring-0 text-sm font-serif" 
               placeholder="Enter your password" 
+              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              style={{ flex: 1, border: 'none', padding: '12px', outline: 'none', fontSize: '1rem', fontFamily: 'Arvo' }}
             />
           </div>
-
-          <button onClick={handleLogin} style={{ 
-            width: '100%', 
-            padding: '12px', 
-            backgroundColor: '#FF0000', 
-            color: 'white', 
-            border: 'none', 
-            borderRadius: '5px', 
-            fontFamily: 'Bebas Neue', 
-            fontSize: '1.25rem', 
-            marginBottom: '15px',
-            cursor: 'pointer'
-          }}>
-            CONFIRM LOGIN
-          </button>
-
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button style={{ flex: 1, padding: '10px', backgroundColor: '#FF0000', color: 'white', border: 'none', borderRadius: '5px', fontFamily: 'Bebas Neue', fontSize: '1rem', cursor: 'pointer' }}>
-               SIGNUP
+          {/* Action Buttons */}
+          <div className="pt-4 space-y-4">
+            {/* Main Submit Button */}
+            <button className="w-full bg-[#ff0000] text-white py-3 rounded-lg font-condensed font-black text-lg uppercase tracking-wider shadow-sm hover:opacity-90 active:scale-95 transition-transform" type="submit">
+              Confirm Login
             </button>
-            <button style={{ flex: 1, padding: '10px', backgroundColor: '#FF0000', color: 'white', border: 'none', borderRadius: '5px', fontFamily: 'Bebas Neue', fontSize: '1rem', cursor: 'pointer' }}>
-               RESET PASSWORD
-            </button>
+            {/* Secondary Buttons */}
+            <div className="flex gap-3">
+              <button 
+                className="flex-1 bg-[#ff0000] text-white py-3 rounded-lg font-condensed font-black text-sm uppercase tracking-wider hover:opacity-90" 
+                type="button"
+                onClick={() => navigate('/signup')}
+              >
+                Signup
+              </button>
+              <button 
+                className="flex-[2] bg-[#ff0000] text-white py-3 rounded-lg font-condensed font-black text-sm uppercase tracking-wider hover:opacity-90" 
+                type="button"
+                onClick={() => navigate('/reset-password')}
+              >
+                Reset Password
+              </button>
+            </div>
           </div>
-        </div>
-      </div>
+        </form>
+      </main>
+      {/* END: LoginContainer */}
 
-      {/* Login Footer */}
-      <footer style={{ background: 'var(--primary-pink)', color: 'white', padding: '20px 0', textAlign: 'center' }}>
-        <p style={{ fontWeight: 'bold', marginBottom: '15px', fontSize: '0.9rem' }}>INDIA'S LARGEST PRIZES AGENCY</p>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '25px' }}>
-          <Home size={24} />
-          <User size={24} />
-          <Lock size={24} />
-          <ShoppingCart size={24} />
+      {/* BEGIN: Footer */}
+      <footer className="mt-auto">
+        {/* Footer Slogan Bar */}
+        <div className="bg-[#f42464] py-3 text-center">
+          <h2 className="text-white text-lg font-condensed font-black tracking-normal">INDIA'S LARGEST PRIZES AGENCY</h2>
         </div>
+        {/* Footer Navigation Icons */}
+        <nav className="bg-[#f42464] pt-2 pb-6 px-10 flex justify-between items-center text-white border-t border-white/20">
+          {/* Home Icon */}
+          <a className="hover:scale-110 transition-transform cursor-pointer" onClick={() => navigate('/home')}>
+            <svg className="h-10 w-10" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path>
+            </svg>
+          </a>
+          {/* Hammer/Gavel Icon */}
+          <a className="hover:scale-110 transition-transform cursor-pointer" onClick={() => navigate('/rules')}>
+            <svg className="h-10 w-10" fill="currentColor" style={{ transform: 'rotate(45deg)' }} viewBox="0 0 24 24">
+              <path d="M21.71 5.29l-3-3a1 1 0 0 0-1.42 0L13 6.59l3.41 3.41 4.3-4.3a1 1 0 0 0 0-1.41zM11.59 8l-3.41-3.41-4.3 4.3a1 1 0 0 0 0 1.41l3 3a1 1 0 0 0 1.42 0L11.59 8zM3.41 13.59l4 4 11.59-11.59-4-4L3.41 13.59z"></path>
+              <path d="M1 21a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-4.59l-4-4V21z"></path>
+            </svg>
+          </a>
+          {/* Result/Scroll Icon */}
+          <a className="hover:scale-110 transition-transform cursor-pointer" onClick={() => navigate('/results')}>
+            <svg className="h-10 w-10" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 18H6V4h12v16zM8 15h8v2H8v-2zm0-4h8v2H8v-2zm0-4h8v2H8V7z"></path>
+            </svg>
+          </a>
+          {/* Cart Icon */}
+          <a className="hover:scale-110 transition-transform cursor-pointer" onClick={() => navigate('/cart')}>
+            <svg className="h-10 w-10" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"></path>
+            </svg>
+          </a>
+        </nav>
       </footer>
+      {/* END: Footer */}
     </div>
   );
 };
