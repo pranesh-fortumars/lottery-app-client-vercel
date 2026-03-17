@@ -83,9 +83,9 @@ const AdminDashboard = () => {
            <h2 className="text-sm font-black text-gray-800 font-condensed uppercase tracking-tight mb-4">Live Activity</h2>
            <div className="space-y-4 flex-grow">
               {[
-                { user: 'User #458', action: 'Purchased Jackpot', time: '2m', color: 'bg-red-50 text-[#f42464]' },
-                { user: 'Rajesh K.', action: 'New Registration', time: '5m', color: 'bg-blue-50 text-blue-500' },
-                { user: 'Amit S.', action: 'Won Prize', time: '12m', color: 'bg-emerald-50 text-emerald-500' },
+                { user: 'User #458', action: 'Purchased Jackpot', time: '2m', color: 'bg-red-50 text-[#f42464]', icon: Ticket },
+                { user: 'Rajesh K.', action: 'New Registration', time: '5m', color: 'bg-blue-50 text-blue-500', icon: Users },
+                { user: 'Amit S.', action: 'Won Prize', time: '12m', color: 'bg-emerald-50 text-emerald-500', icon: TrendingUp },
               ].map((activity, idx) => (
                 <div key={idx} className="flex gap-3 items-center">
                    <div className={`p-2 rounded-lg ${activity.color} shrink-0`}>
