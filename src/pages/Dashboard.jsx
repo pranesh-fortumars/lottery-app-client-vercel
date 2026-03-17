@@ -52,12 +52,35 @@ const CountdownTimer = ({ drawTime }) => {
 const Dashboard = () => {
   const navigate = useNavigate();
 
+  const isClosed = (drawTime) => {
+    const now = new Date();
+    const parts = drawTime.match(/(\d+)[.:](\d+)\s*(AM|PM)/);
+    if (!parts) return true;
+    
+    let hours = parseInt(parts[1]);
+    const minutes = parseInt(parts[2]);
+    const ampm = parts[3];
+    
+    if (ampm === 'PM' && hours !== 12) hours += 12;
+    if (ampm === 'AM' && hours === 12) hours = 0;
+    
+    const drawDate = new Date();
+    drawDate.setHours(hours, minutes, 0, 0);
+    
+    // Closed if within 15 minutes of draw or after draw
+    const diffInMinutes = (drawDate - now) / (1000 * 60);
+    return diffInMinutes <= 15;
+  };
+
   const games = [
     { time: '01:00 PM', name: 'DEAR', type: 'dear' },
     { time: '06:00 PM', name: 'DEAR', type: 'dear' },
     { time: '08:00 PM', name: 'DEAR', type: 'dear' },
     { time: '03:00 PM', name: 'KERALA', type: 'kerala' }
-  ];
+  ].map(game => ({
+    ...game,
+    closed: isClosed(game.time)
+  }));
 
   return (
     <div className="bg-[#f9f9f9]">
@@ -91,8 +114,10 @@ const Dashboard = () => {
         {games.map((game, idx) => (
           <div 
             key={idx} 
-            className="game-card-gradient p-4 rounded-3xl relative overflow-hidden h-[160px] shadow-2xl border border-white/5 cursor-pointer active:scale-95 transition-all"
-            onClick={() => navigate(`/select/${idx + 1}`)}
+            className={`game-card-gradient p-4 rounded-3xl relative overflow-hidden h-[160px] shadow-2xl border border-white/5 transition-all ${
+              game.closed ? 'opacity-60 grayscale scale-[0.98]' : 'cursor-pointer active:scale-95'
+            }`}
+            onClick={() => !game.closed && navigate(`/select/${idx + 1}`)}
           >
             {/* Gold Geometric Lines Overlay - More visible */}
             <div className="absolute top-0 right-0 w-full h-full opacity-40 pointer-events-none">
@@ -101,9 +126,14 @@ const Dashboard = () => {
             
             <div className="relative z-10 flex flex-col justify-between h-full">
               <div className="text-white">
-                <p className="text-[12px] font-black opacity-80 leading-tight uppercase tracking-tight">Next Lottery</p>
-                <p className="text-[12px] font-black opacity-80 mb-1 uppercase tracking-tight">Booking Time</p>
-                <CountdownTimer drawTime={game.time} />
+                <p className="text-[12px] font-black opacity-80 leading-tight uppercase tracking-tight">Booking Time</p>
+                {game.closed ? (
+                  <div className="h-10 flex items-center">
+                    <span className="bg-red-600 text-white px-4 py-1.5 rounded-full text-[12px] font-black uppercase tracking-widest animate-pulse shadow-lg">CLOSED</span>
+                  </div>
+                ) : (
+                  <CountdownTimer drawTime={game.time} />
+                )}
               </div>
               
               <div className="flex justify-between items-end mt-3 border-t border-white/10 pt-2">

@@ -7,19 +7,44 @@ import { useCart } from '../context/CartContext';
 
 const JackpotPage = () => {
   const navigate = useNavigate();
-  const [activeSlot, setActiveSlot] = useState('11.30 AM');
-  const { cart } = useCart();
+  
+  const isClosed = (slotTime) => {
+    const now = new Date();
+    const parts = slotTime.match(/(\d+)[.:](\d+)\s*(AM|PM)/);
+    if (!parts) return true;
+    
+    let hours = parseInt(parts[1]);
+    const minutes = parseInt(parts[2]);
+    const ampm = parts[3];
+    
+    if (ampm === 'PM' && hours !== 12) hours += 12;
+    if (ampm === 'AM' && hours === 12) hours = 0;
+    
+    const slotDate = new Date();
+    slotDate.setHours(hours, minutes, 0, 0);
+    
+    // Booking ends 15 mins before draw
+    const diffInMinutes = (slotDate - now) / (1000 * 60);
+    return diffInMinutes <= 15;
+  };
 
   const slots = [
-    { time: '10.30 AM', status: 'closed' },
-    { time: '11.30 AM', status: 'active' },
-    { time: '12.30 PM', status: 'active' },
-    { time: '01.30 PM', status: 'active' },
-    { time: '03.30 PM', status: 'active' },
-    { time: '05.30 PM', status: 'active' },
-    { time: '06.30 PM', status: 'active' },
-    { time: '07.30 PM', status: 'active' },
-  ];
+    { time: '10.30 AM' },
+    { time: '11.30 AM' },
+    { time: '12.30 PM' },
+    { time: '01.30 PM' },
+    { time: '03.30 PM' },
+    { time: '05.30 PM' },
+    { time: '06.30 PM' },
+    { time: '07.30 PM' },
+  ].map(s => ({
+    ...s,
+    status: isClosed(s.time) ? 'closed' : 'active'
+  }));
+
+  const { cart } = useCart();
+  const firstActiveSlot = slots.find(s => s.status === 'active')?.time || slots[slots.length - 1].time;
+  const [activeSlot, setActiveSlot] = useState(firstActiveSlot);
 
   const abcTiers = [
     { price: "0.00", win: "₹ 10000, 1000" },
