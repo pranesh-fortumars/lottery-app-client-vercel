@@ -14,10 +14,20 @@ import CartPage from './pages/CartPage';
 import ProfilePage from './pages/ProfilePage';
 
 import PageWrapper from './components/PageWrapper';
+import AdminLayout from './components/AdminLayout';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminAnnouncements from './pages/admin/AdminAnnouncements';
+import AdminControl from './pages/admin/AdminControl';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminUserDetails from './pages/admin/AdminUserDetails';
+import AdminReports from './pages/admin/AdminReports';
+import AdminSettings from './pages/admin/AdminSettings';
+import { CartProvider } from './context/CartContext';
 
 function App() {
   return (
-    <Router>
+    <CartProvider>
+      <Router>
       <AnimatePresence mode="wait">
         <Routes>
           <Route path="/login" element={<LoginPage />} />
@@ -38,10 +48,20 @@ function App() {
           <Route path="/select/:gameId" element={<SelectionPage />} />
           <Route path="/jackpot" element={<JackpotPage />} />
           
+          {/* Admin Routes */}
+          <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
+          <Route path="/admin/announcements" element={<AdminLayout><AdminAnnouncements /></AdminLayout>} />
+          <Route path="/admin/control" element={<AdminLayout><AdminControl /></AdminLayout>} />
+          <Route path="/admin/users" element={<AdminLayout><AdminUsers /></AdminLayout>} />
+          <Route path="/admin/users/:userId" element={<AdminLayout><AdminUserDetails /></AdminLayout>} />
+          <Route path="/admin/reports" element={<AdminLayout><AdminReports /></AdminLayout>} />
+          <Route path="/admin/settings" element={<AdminLayout><AdminSettings /></AdminLayout>} />
+          
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </AnimatePresence>
     </Router>
+    </CartProvider>
   );
 }
 
