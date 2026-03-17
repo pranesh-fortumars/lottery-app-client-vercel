@@ -8,8 +8,8 @@ const RulesPage = () => {
 
   const RuleSection = ({ title, children }) => (
     <div className="mb-6">
-      <h3 className="text-gray-900 font-bold text-sm mb-2">{title}</h3>
-      <div className="text-[11px] text-gray-700 leading-relaxed font-serif space-y-1">
+      <h3 className="text-gray-900 font-bold text-sm mb-2 font-sans">{title}</h3>
+      <div className="text-[12px] text-gray-700 leading-relaxed font-sans space-y-1">
         {children}
       </div>
     </div>
@@ -18,12 +18,12 @@ const RulesPage = () => {
   const PrizeTier = ({ price, win, note }) => (
     <div className="mb-4">
       <div className="flex gap-1 items-baseline">
-        <span className="text-[11px] font-bold text-gray-800">Ticket Price{note && <span className="text-gray-500 font-normal"> ({note})</span>}: </span>
-        <span className="text-sm font-bold text-red-600 font-mono">{price}</span>
+        <span className="text-[12px] font-bold text-gray-800 font-sans">Ticket Price{note && <span className="text-gray-500 font-normal"> ({note})</span>}: </span>
+        <span className="text-[13px] font-black text-red-600 font-sans">{price}</span>
       </div>
       <div className="flex gap-1 items-baseline">
-        <span className="text-[11px] font-bold text-gray-800">Winning Amount: </span>
-        <span className="text-[11px] font-bold text-red-600 font-mono">{win}</span>
+        <span className="text-[12px] font-bold text-gray-800 font-sans">Winning Amount: </span>
+        <span className="text-[12px] font-bold text-red-600 font-sans">{win}</span>
       </div>
     </div>
   );
@@ -49,11 +49,11 @@ const RulesPage = () => {
 
       <div className="bg-white min-h-screen px-6 py-8 pb-32 overflow-y-auto">
         <div className="max-w-[400px] mx-auto text-center mb-8">
-          <h2 className="text-gray-900 font-black text-lg font-serif">Diamond Agency</h2>
+          <h2 className="text-gray-900 font-black text-lg font-sans uppercase tracking-tight">Diamond Agency</h2>
         </div>
 
         <div className="space-y-6">
-          <p className="text-[11px] text-gray-800 font-serif leading-tight">
+          <p className="text-[12px] text-gray-800 font-sans leading-relaxed">
             This 4 & 3 digit game is based on the daily result of Kerela & Dear lottery first prize results with the last four & 3 digits based.
           </p>
 
@@ -117,13 +117,13 @@ const RulesPage = () => {
             <div className="mt-4 space-y-4">
               <div className="mb-4">
                 <div className="flex gap-1 items-baseline">
-                  <span className="text-[11px] font-bold text-gray-800">Ticket Price: </span>
-                  <span className="text-sm font-bold text-red-600 font-mono">20</span>
+                  <span className="text-[12px] font-bold text-gray-800 font-sans">Ticket Price: </span>
+                  <span className="text-[14px] font-black text-red-600 font-sans">20</span>
                 </div>
-                <p className="text-[10px] font-bold text-gray-900 italic">This one have one chance of winning!.</p>
+                <p className="text-[11px] font-bold text-gray-900 italic font-sans">This one have one chance of winning!.</p>
                 <div className="flex gap-1 items-baseline">
-                  <span className="text-[11px] font-bold text-gray-800">Winning Amount: </span>
-                  <span className="text-[11px] font-bold text-red-600 font-mono">100000</span>
+                  <span className="text-[12px] font-bold text-gray-800 font-sans">Winning Amount: </span>
+                  <span className="text-[12px] font-bold text-red-600 font-sans">100000</span>
                 </div>
               </div>
               
