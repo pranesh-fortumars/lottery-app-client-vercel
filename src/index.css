@@ -2,14 +2,11 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Arvo:wght@400;700&family=Bebas+Neue&family=Roboto:wght@400;700;900&display=swap');
 
-@theme {
+:root {
   --color-brand-pink: #f42464;
   --color-brand-red: #ff0000;
   --font-bebas: "Bebas Neue", cursive;
   --font-roboto: "Roboto", sans-serif;
-}
-
-:root {
   --primary-pink: #f42464;
   --dark-red: #ff0000;
   --nav-gradient: linear-gradient(180deg, #f42464 0%, #ff5c8a 100%);
