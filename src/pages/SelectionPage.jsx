@@ -10,17 +10,36 @@ const SelectionPage = () => {
   const { gameId } = useParams();
   const { cart } = useCart();
   
-  const getGameName = () => {
-    if (gameId === '4') return 'Kerala Lottery';
-    return 'Dear Lottery';
-  };
+  const isKerala = gameId === '4';
+  const getGameName = () => isKerala ? 'Kerala Lottery' : 'Dear Lottery';
+
+  const abcTiers = [
+    { price: "12.00", win: "₹ 6250, 250, 25" },
+    { price: "28.00", win: "₹ 15000, 500, 50" },
+    { price: "30.00", win: "₹ 17500, 500, 50" },
+    { price: "55.00", win: "₹ 30000, 1000, 100" },
+    { price: "60.00", win: "₹ 35000, 1000, 100" },
+  ];
+
+  if (isKerala) {
+    abcTiers.push(
+      { price: "33.00", win: "₹ 20000, 500, 50" },
+      { price: "65.00", win: "₹ 40000, 1000, 100" }
+    );
+  }
+
+  const xabcTiers = [
+    { price: "20.00", win: "₹ 100000" },
+    { price: "50.00", win: "₹ 250000, 5000, 500, 50" },
+    { price: "100.00", win: "₹ 500000, 10000, 1000, 100" },
+  ];
 
   return (
     <PageWrapper title="DIAMOND JACKPOT LOTTERY" showNav={true}>
       <div className="bg-[#f9f9f9] min-h-screen pb-24">
         <div className="bg-[#fce4ec] py-3 px-4 shadow-sm border-b border-white/50 text-center mb-4">
            <p className="text-white bg-[#ff1c74] inline-block px-5 py-2 rounded-full text-[10px] font-black tracking-wide uppercase">
-             Lot purchase time is open till 10:45 AM and Results...
+             {isKerala ? 'Booking ends at 02:45 PM' : 'Booking ends 15 mins before draw'}
            </p>
         </div>
 
@@ -35,9 +54,23 @@ const SelectionPage = () => {
           </div>
 
           <BettingCard title="Single Digit" winText="Win ₹ 100" price="11.00" digits={1} gameName={getGameName()} />
-          <BettingCard title="Double Digits" winText="Win ₹ 1000" price="11.00" digits={2} gameName={getGameName()} />
-          <BettingCard title="Three Digits" winText="Win ₹ 10,000" price="30.00" digits={3} gameName={getGameName()} />
-          <BettingCard title="Four Digits" winText="Win ₹ 30,000" price="40.00" digits={4} gameName={getGameName()} />
+          <BettingCard title="Two Digits" winText="Win ₹ 1000" price="11.00" digits={2} gameName={getGameName()} />
+          
+          <BettingCard 
+            title="Three Digits" 
+            digits={3} 
+            gameName={getGameName()} 
+            priceOptions={abcTiers}
+          />
+
+          {isKerala && (
+            <BettingCard 
+              title="Four Digits" 
+              digits={4} 
+              gameName={getGameName()} 
+              priceOptions={xabcTiers}
+            />
+          )}
         </div>
 
         <div className="fixed bottom-0 w-full max-w-[480px] p-4 bg-white/50 backdrop-blur-sm z-50">

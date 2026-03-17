@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 
-const BettingCard = ({ title, winText, price, digits = 1, showBox = false, gameName = "Dear Lottery" }) => {
+const BettingCard = ({ title, winText: initialWinText, price: initialPrice, digits = 1, gameName = "Dear Lottery", priceOptions = [] }) => {
   const { addToCart } = useCart();
+  const [selectedTier, setSelectedTier] = useState(priceOptions.length > 0 ? priceOptions[0] : null);
   
+  const currentPrice = selectedTier ? selectedTier.price : initialPrice;
+  const currentWinText = selectedTier ? `Win ${selectedTier.win}` : initialWinText;
+
   // Manage state for multiple rows
   const [rows, setRows] = useState([
     { id: 1, numbers: Array(digits).fill(''), qty: 1 },
@@ -38,11 +42,11 @@ const BettingCard = ({ title, winText, price, digits = 1, showBox = false, gameN
     }
     
     addToCart({
-      title: `${gameName} - ${title}`,
+      title: `${gameName} - ${title} (Price: ${currentPrice})`,
       num: row.numbers.join(''),
       qty: row.qty,
-      price: parseFloat(price),
-      board: digits === 1 ? 'A' : digits === 2 ? 'AB' : 'ABC'
+      price: parseFloat(currentPrice),
+      board: digits === 1 ? 'A' : digits === 2 ? 'AB' : digits === 3 ? 'ABC' : 'XABC'
     });
 
     // Clear the row
@@ -59,13 +63,14 @@ const BettingCard = ({ title, winText, price, digits = 1, showBox = false, gameN
 
   return (
     <div className="border-[1.5px] border-[#ff004d] rounded-2xl p-4 mb-6 bg-white shadow-xl relative overflow-hidden">
-      <div className="flex gap-4 mb-5 border-b border-gray-100 pb-3">
+      <div className="flex gap-4 mb-3 border-b border-gray-100 pb-3">
         <img src="https://img.icons8.com/color/64/000000/treasure-chest.png" alt="Chest" className="w-14 h-14 drop-shadow-md" />
         <div className="flex-grow">
           <h3 className="text-gray-900 font-black text-lg leading-tight uppercase tracking-tight">
-            {title} <span className="text-[#ff004d]">{winText}</span>
+            {title}
           </h3>
-          <p className="text-[#ff004d] font-black text-xl">₹ {price}</p>
+          <p className="text-[#ff004d] font-black text-[10px] uppercase tracking-tight leading-none mb-1">{currentWinText}</p>
+          <p className="text-[#ff004d] font-black text-xl leading-none">₹ {currentPrice}</p>
         </div>
         <button 
           onClick={() => rows.forEach((_, i) => handleRandom(i))}
@@ -74,6 +79,24 @@ const BettingCard = ({ title, winText, price, digits = 1, showBox = false, gameN
           Random All
         </button>
       </div>
+
+      {priceOptions.length > 0 && (
+        <div className="flex overflow-x-auto gap-2 mb-4 pb-2 scrollbar-hide">
+          {priceOptions.map((opt, idx) => (
+            <button
+              key={idx}
+              onClick={() => setSelectedTier(opt)}
+              className={`flex-shrink-0 px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all border-2 ${
+                selectedTier.price === opt.price 
+                  ? 'bg-[#ff004d] text-white border-[#ff004d] shadow-md scale-105' 
+                  : 'bg-gray-50 text-gray-400 border-gray-100 hover:border-gray-300'
+              }`}
+            >
+              ₹ {opt.price}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="space-y-5">
         {rows.map((row, rowIdx) => (

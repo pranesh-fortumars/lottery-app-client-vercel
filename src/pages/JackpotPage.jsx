@@ -7,7 +7,7 @@ import { useCart } from '../context/CartContext';
 
 const JackpotPage = () => {
   const navigate = useNavigate();
-  const [activeSlot, setActiveSlot] = useState('01.30 PM');
+  const [activeSlot, setActiveSlot] = useState('11.30 AM');
   const { cart } = useCart();
 
   const slots = [
@@ -21,12 +21,21 @@ const JackpotPage = () => {
     { time: '07.30 PM', status: 'active' },
   ];
 
+  const abcTiers = [
+    { price: "0.00", win: "₹ 10000, 1000" },
+    { price: "12.00", win: "₹ 6250, 250, 25" },
+    { price: "28.00", win: "₹ 15000, 500, 50" },
+    { price: "30.00", win: "₹ 17500, 500, 50" },
+    { price: "55.00", win: "₹ 30000, 1000, 100" },
+    { price: "60.00", win: "₹ 35000, 1000, 100" },
+  ];
+
   return (
     <PageWrapper title="DIAMOND JACKPOT LOTTERY" showNav={true}>
       <div className="bg-[#f9f9f9] min-h-screen pb-24">
         <div className="bg-[#fce4ec] py-3 px-4 shadow-sm border-b border-white/50 text-center mb-4">
            <p className="text-white bg-[#ff1c74] inline-block px-5 py-2 rounded-full text-[10px] font-black tracking-wide uppercase">
-             Lot purchase time is open till 10:45 AM and Results...
+             Jackpot lot purchase open till 15 mins before draw
            </p>
         </div>
 
@@ -53,15 +62,20 @@ const JackpotPage = () => {
               >
                 <p className={`text-[12px] font-black leading-none mb-1 ${slot.status === 'active' ? 'text-red-500' : 'text-gray-500'}`}>{slot.time}</p>
                 <p className={`text-[8px] font-black uppercase leading-tight ${slot.status === 'active' ? 'text-red-500' : 'text-gray-400'}`}>
-                  {slot.status === 'active' ? 'Jackpot Lot' : 'Jackpot Lot closed'}
+                  {slot.status === 'active' ? 'Active' : 'Closed'}
                 </p>
               </div>
             ))}
           </div>
 
           <BettingCard title="Single Digit" winText="Win ₹ 100" price="11.00" digits={1} gameName="Jackpot" />
-          <BettingCard title="Double Digits" winText="Win ₹ 1000" price="11.00" digits={2} gameName="Jackpot" />
-          <BettingCard title="Three Digits" winText="Win ₹ 10,000" price="55.00" digits={3} gameName="Jackpot" />
+          <BettingCard title="Two Digits" winText="Win ₹ 1000" price="11.00" digits={2} gameName="Jackpot" />
+          <BettingCard 
+            title="Three Digits" 
+            digits={3} 
+            gameName="Jackpot" 
+            priceOptions={abcTiers}
+          />
         </div>
 
         <div className="fixed bottom-0 w-full max-w-[480px] p-4 bg-white/50 backdrop-blur-sm z-50">
