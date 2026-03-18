@@ -11,7 +11,8 @@ import {
   ChevronRight,
   Zap,
   Box,
-  Key
+  Key,
+  Clock
 } from 'lucide-react';
 
 const AdminSettings = () => {

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { 
   Play, 
-  Square, 
   Settings2, 
   RefreshCcw, 
   AlertCircle,
@@ -11,7 +10,8 @@ import {
   Target,
   Gamepad2,
   Lock,
-  ChevronRight
+  ChevronRight,
+  CreditCard
 } from 'lucide-react';
 
 const AdminControl = () => {
