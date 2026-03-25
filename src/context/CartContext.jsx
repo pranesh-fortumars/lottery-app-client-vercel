@@ -14,16 +14,19 @@ export const useCart = () => {
 export const CartProvider = ({ children }) => {
   const { user, updateBalance } = useAuth();
 
+  // --- Cart State ---
   const [cart, setCart] = useState(() => {
     const savedCart = localStorage.getItem('diamond_cart');
     return savedCart ? JSON.parse(savedCart) : [];
   });
 
+  // --- Purchased Tickets ---
   const [purchasedTickets, setPurchasedTickets] = useState(() => {
     const savedTickets = localStorage.getItem('diamond_purchased_tickets');
     return savedTickets ? JSON.parse(savedTickets) : [];
   });
 
+  // --- Declared Results (1st, 2nd, 3rd Positions) ---
   const [declaredResults, setDeclaredResults] = useState(() => {
     const savedResults = localStorage.getItem('diamond_results');
     return savedResults ? JSON.parse(savedResults) : [];
@@ -68,7 +71,8 @@ export const CartProvider = ({ children }) => {
   };
 
   const addResult = (resultData) => {
-    // resultData: { draw, brand, playType, drawName, winPositions, number }
+    // resultData: { draw, brand, winners: [], prizes: [] }
+    // winners: [{ title: '1st Prize', number: '1234', amount: '50000' }, ...]
     const newResultEntry = {
       ...resultData,
       id: Date.now(),
@@ -78,38 +82,28 @@ export const CartProvider = ({ children }) => {
     
     setDeclaredResults((prev) => [newResultEntry, ...prev]);
 
-    // --- High-Precision Winner Processing ---
+    // --- Winner Processing Logic ---
     const updatedTickets = purchasedTickets.map(ticket => {
-      // 1. Match Draw Time
-      const timeMatch = ticket.title.includes(resultData.draw);
+      // Find matches for the current brand and draw time
+      if (!ticket.title.includes(resultData.draw)) return ticket;
+
+      // Find if ticket number matches any winning position
+      const winningPosition = resultData.winPositions.find(pos => pos.number === ticket.num);
       
-      // 2. Match Brand (Case Insensitive)
-      const brandMatch = ticket.title.toUpperCase().includes(resultData.brand.toUpperCase());
+      if (winningPosition) {
+        const prizeAmount = parseFloat(winningPosition.amount) * ticket.qty;
+        
+        // Add prize to user's virtual balance if it's their ticket
+        // (In a real app, we'd check user identity here, but we'll assume current user)
+        if (ticket.status !== 'Won' && user?.role === 'user') {
+          updateBalance(prizeAmount);
+        }
 
-      // 3. Match Play Type (1D, 2D, 3D, 4D)
-      // Note: If ticket.playType is missing, we fallback to title matching for backward compatibility
-      const ptMatch = ticket.playType 
-        ? (ticket.playType === resultData.playType) 
-        : ticket.title.includes(resultData.playType);
-
-      if (timeMatch && brandMatch && ptMatch) {
-         const winningPosition = resultData.winPositions.find(pos => pos.number === ticket.num);
-         
-         if (winningPosition) {
-            const prizeAmount = parseFloat(winningPosition.amount) * ticket.qty;
-            
-            // Only update wallet if ticket not already processed
-            if (ticket.status !== 'Won' && user?.role === 'user') {
-               updateBalance(prizeAmount);
-            }
-            
-            return {
-               ...ticket,
-               status: 'Won',
-               prize: `₹ ${prizeAmount.toLocaleString()}`,
-               winningPosition: winningPosition.position
-            };
-         }
+        return {
+          ...ticket,
+          status: 'Won',
+          prize: `₹ ${prizeAmount.toLocaleString()}`
+        };
       }
       
       return ticket;

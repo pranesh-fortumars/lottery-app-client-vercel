@@ -1,18 +1,29 @@
 import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 
-const BettingCard = ({ title, winText: initialWinText, price: initialPrice, digits = 1, gameName = "Dear Lottery", priceOptions = [], board = "" }) => {
+const BettingCard = ({ title, winText: initialWinText, price: initialPrice, digits = 1, gameName = "Dear Lottery", priceOptions = [], customRows = null }) => {
   const { addToCart } = useCart();
   const [selectedTier, setSelectedTier] = useState(priceOptions.length > 0 ? priceOptions[0] : null);
   
   const currentPrice = selectedTier ? selectedTier.price : initialPrice;
   const currentWinText = selectedTier ? `Win ${selectedTier.win}` : (initialWinText || "");
 
-  const [rows, setRows] = useState([
-    { id: 1, numbers: Array(digits).fill(''), qty: 1 },
-    { id: 2, numbers: Array(digits).fill(''), qty: 1 },
-    { id: 3, numbers: Array(digits).fill(''), qty: 1 },
-  ]);
+  // Local state for rows. Each row has its own data.
+  const [rows, setRows] = useState(() => {
+    if (customRows) {
+      return customRows.map((config, idx) => ({
+        id: idx + 1,
+        numbers: Array(config.digits).fill(''),
+        qty: 1,
+        labels: config.labels
+      }));
+    }
+    return [
+      { id: 1, numbers: Array(digits).fill(''), qty: 1, labels: null },
+      { id: 2, numbers: Array(digits).fill(''), qty: 1, labels: null },
+      { id: 3, numbers: Array(digits).fill(''), qty: 1, labels: null },
+    ];
+  });
 
   const updateNumber = (rowIdx, digitIdx, val) => {
     if (val.length > 1 || !/^\d*$/.test(val)) return;
@@ -20,7 +31,7 @@ const BettingCard = ({ title, winText: initialWinText, price: initialPrice, digi
     newRows[rowIdx].numbers[digitIdx] = val;
     setRows(newRows);
     
-    if (val && digitIdx < digits - 1) {
+    if (val && digitIdx < newRows[rowIdx].numbers.length - 1) {
       const next = document.getElementById(`input-${title}-${rowIdx}-${digitIdx + 1}`);
       if (next) next.focus();
     }
@@ -61,13 +72,12 @@ const BettingCard = ({ title, winText: initialWinText, price: initialPrice, digi
         num: num,
         qty: row.qty,
         price: parseFloat(currentPrice),
-        board: board || 'ABC',
-        playType: '3D'
+        board: 'ABC'
       });
     });
 
     const newRows = [...rows];
-    newRows[rowIdx].numbers = Array(digits).fill('');
+    newRows[rowIdx].numbers = Array(row.numbers.length).fill('');
     setRows(newRows);
     alert(`Added ${permutations.length} combinations to cart!`);
   };
@@ -79,34 +89,42 @@ const BettingCard = ({ title, winText: initialWinText, price: initialPrice, digi
       return;
     }
     
+    let boardLabel = '';
+    if (row.labels) {
+      boardLabel = row.labels.join('');
+    } else {
+      const d = row.numbers.length;
+      if (d === 1) boardLabel = 'A';
+      else if (d === 2) boardLabel = 'AB';
+      else if (d === 3) boardLabel = 'ABC';
+      else if (d === 4) boardLabel = 'DABC';
+    }
+
     addToCart({
-      title: `${gameName} - ${title} (Price: ${currentPrice})`,
+      title: `${gameName} - ${title} (Board: ${boardLabel})`,
       num: row.numbers.join(''),
       qty: row.qty,
       price: parseFloat(currentPrice),
-      board: board || (digits === 1 ? 'A' : digits === 2 ? 'AB' : digits === 3 ? 'ABC' : 'DABC'),
-      playType: `${digits}D`
+      board: boardLabel
     });
 
     const newRows = [...rows];
-    newRows[rowIdx].numbers = Array(digits).fill('');
+    newRows[rowIdx].numbers = Array(row.numbers.length).fill('');
     setRows(newRows);
   };
 
   const handleRandom = (rowIdx) => {
     const newRows = [...rows];
-    newRows[rowIdx].numbers = Array(digits).fill(0).map(() => Math.floor(Math.random() * 10).toString());
+    const d = newRows[rowIdx].numbers.length;
+    newRows[rowIdx].numbers = Array(d).fill(0).map(() => Math.floor(Math.random() * 10).toString());
     setRows(newRows);
   };
 
-  const getLabel = (idx) => {
-    if (board) {
-      // Split board like "XABC" or "AB" into individual chars
-      const labels = board.split('');
-      return labels[idx] || '';
-    }
-    if (digits === 3) return ['A', 'B', 'C'][idx];
-    if (digits === 4) return ['D', 'A', 'B', 'C'][idx];
+  const getLabel = (row, idx) => {
+    if (row.labels) return row.labels[idx];
+    const d = row.numbers.length;
+    if (d === 3) return ['A', 'B', 'C'][idx];
+    if (d === 4) return ['D', 'A', 'B', 'C'][idx];
     return ['A', 'B', 'C', 'D'][idx];
   };
 
@@ -119,7 +137,7 @@ const BettingCard = ({ title, winText: initialWinText, price: initialPrice, digi
             {title}
           </h3>
           <p className="text-[#ff004d] font-black text-[10px] uppercase tracking-tight leading-none mb-1">
-            {currentWinText.includes('Win ') ? currentWinText : `Win ${currentWinText}`}
+            {currentWinText && (currentWinText.includes('Win ') ? currentWinText : `Win ${currentWinText}`)}
           </p>
           <p className="text-[#ff004d] font-black text-xl leading-none">₹ {currentPrice}</p>
         </div>
@@ -154,7 +172,7 @@ const BettingCard = ({ title, winText: initialWinText, price: initialPrice, digi
           <div key={row.id} className="flex items-center justify-between gap-3 min-w-[340px]">
              <div className="flex gap-1 shrink-0">
                 {row.numbers.map((_, i) => (
-                  <div key={i} className="w-7 h-7 bg-[#ff004d] rounded-full flex items-center justify-center text-white font-black text-[9px] shadow-sm uppercase">{getLabel(i)}</div>
+                  <div key={i} className="w-7 h-7 bg-[#ff004d] rounded-full flex items-center justify-center text-white font-black text-[9px] shadow-sm uppercase">{getLabel(row, i)}</div>
                 ))}
              </div>
              
@@ -180,13 +198,13 @@ const BettingCard = ({ title, winText: initialWinText, price: initialPrice, digi
              </div>
 
              <div className="flex gap-1 shrink-0">
-                {digits === 3 && (
-                  <button 
-                    onClick={() => handleBox(rowIdx)}
-                    className="bg-gray-800 text-white px-2 py-2 rounded-lg font-black text-[9px] uppercase shadow-md active:scale-95 border-b-4 border-gray-950"
-                  >
-                    BOX
-                  </button>
+                {row.numbers.length === 3 && (
+                   <button 
+                     onClick={() => handleBox(rowIdx)}
+                     className="bg-gray-800 text-white px-2 py-2 rounded-lg font-black text-[9px] uppercase shadow-md active:scale-95 border-b-4 border-gray-950"
+                   >
+                     BOX
+                   </button>
                 )}
                 <button 
                   onClick={() => handleAdd(rowIdx)}

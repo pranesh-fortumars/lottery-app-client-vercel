@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import PageWrapper from '../components/PageWrapper';
-import { ScrollText, Gavel, ShoppingCart, Lock, LayoutGrid, Zap } from 'lucide-react';
+import { ScrollText, Gavel, ShoppingCart, Lock } from 'lucide-react';
 import BettingCard from '../components/BettingCard';
 import { useCart } from '../context/CartContext';
 
@@ -11,7 +11,7 @@ const SelectionPage = () => {
   const { cart } = useCart();
   
   const isKerala = gameId === '4';
-  const getGameName = () => isKerala ? 'KERALA STATE' : 'DEAR LOTTERY';
+  const getGameName = () => isKerala ? 'Kerala Lottery' : 'Dear Lottery';
   
   const gameTimes = {
     '1': '01:00 PM',
@@ -50,6 +50,13 @@ const SelectionPage = () => {
     { price: "60.00", win: "₹ 35000, 1000, 100" },
   ];
 
+  if (isKerala) {
+    abcTiers.push(
+      { price: "33.00", win: "₹ 20000, 500, 50" },
+      { price: "65.00", win: "₹ 40000, 1000, 100" }
+    );
+  }
+
   const xabcTiers = [
     { price: "20.00", win: "₹ 100000" },
     { price: "50.00", win: "₹ 250000, 5000, 500, 50" },
@@ -57,93 +64,75 @@ const SelectionPage = () => {
   ];
 
   return (
-    <PageWrapper title={getGameName()} showNav={true}>
-      <div className="bg-white min-h-screen pb-32">
-        {/* Draw Status Banner */}
-        <div className={`py-4 px-6 text-center mb-6 relative overflow-hidden transition-all duration-500 ${closed ? 'bg-red-600' : 'bg-[#ff004d]/5'}`}>
-           {!closed && <div className="absolute inset-0 bg-white/20 animate-pulse"></div>}
-           <p className={`font-black uppercase tracking-widest text-[10px] relative z-10 ${closed ? 'text-white' : 'text-[#ff004d]'}`}>
-             {closed ? 'BOOKING CLOSED FOR THIS DRAW' : `LIVE: Booking ends at ${new Date(new Date().setMinutes(new Date().getMinutes() + 15)).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`}
+    <PageWrapper title={getGameName().toUpperCase()} showNav={true}>
+      <div className="bg-[#f9f9f9] min-h-screen">
+        <div className={`py-3 px-4 shadow-sm border-b border-white/50 text-center mb-4 ${closed ? 'bg-red-600' : 'bg-[#fce4ec]'}`}>
+           <p className="text-white inline-block px-5 py-2 rounded-full text-[10px] font-black tracking-wide uppercase">
+             {closed ? 'BOOKING CLOSED FOR THIS DRAW' : (isKerala ? 'Booking ends at 02:45 PM' : 'Booking ends 15 mins before draw')}
            </p>
         </div>
 
-        <div className={`p-4 ${closed ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
-          {/* Quick Actions */}
-          <div className="flex gap-3 mb-10">
-             <button onClick={() => navigate('/results')} className="flex-1 bg-gray-900 text-white h-14 rounded-2xl flex items-center justify-center gap-2 font-black shadow-xl uppercase tracking-widest text-[10px] active:scale-95 transition-all">
-                <ScrollText size={18} /> Market Results
+        <div className={`p-4 pb-28 ${closed ? 'opacity-50 pointer-events-none' : ''}`}>
+          <div className="flex gap-4 mb-8">
+             <button onClick={() => navigate('/rules')} className="flex-1 bg-[#ff004d] text-white py-3 rounded-xl flex items-center justify-center gap-2 font-black shadow-lg uppercase tracking-tight">
+                <Gavel size={20} /> Rules
              </button>
-             <button className="flex-1 bg-white border-2 border-gray-900 text-gray-900 h-14 rounded-2xl flex items-center justify-center gap-2 font-black shadow-md uppercase tracking-widest text-[10px] active:scale-95 transition-all">
-                <Zap size={18} className="text-[#ff004d]" /> Hot Numbers
+             <button onClick={() => navigate('/results')} className="flex-1 bg-[#ff004d] text-white py-3 rounded-xl flex items-center justify-center gap-2 font-black shadow-lg uppercase tracking-tight">
+                <ScrollText size={20} /> Results
              </button>
           </div>
 
-          {/* 1D FORMATS */}
-          <div className="mb-10">
-            <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-4 ml-2 border-l-4 border-[#ff004d] pl-3">1D Format Slots</h4>
-            <div className="grid grid-cols-1 gap-1">
-              <BettingCard title="1D Slot A" winText="₹ 100" price="11.00" digits={1} gameName={getGameName()} board="A" />
-              <BettingCard title="1D Slot B" winText="₹ 100" price="11.00" digits={1} gameName={getGameName()} board="B" />
-              <BettingCard title="1D Slot C" winText="₹ 100" price="11.00" digits={1} gameName={getGameName()} board="C" />
-            </div>
-          </div>
+          <BettingCard 
+            title="Single Digit" 
+            winText="₹ 100" 
+            price="11.00" 
+            gameName={getGameName()} 
+            customRows={[
+              { labels: ['A'], digits: 1 },
+              { labels: ['B'], digits: 1 },
+              { labels: ['C'], digits: 1 }
+            ]}
+          />
 
-          {/* 2D FORMATS */}
-          <div className="mb-10">
-            <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-4 ml-2 border-l-4 border-amber-500 pl-3">2D Format Slots</h4>
-            <div className="grid grid-cols-1 gap-1">
-              <BettingCard title="2D Slot AB" winText="₹ 1000" price="11.00" digits={2} gameName={getGameName()} board="AB" />
-              <BettingCard title="2D Slot BC" winText="₹ 1000" price="11.00" digits={2} gameName={getGameName()} board="BC" />
-              <BettingCard title="2D Slot AC" winText="₹ 1000" price="11.00" digits={2} gameName={getGameName()} board="AC" />
-            </div>
-          </div>
+          <BettingCard 
+            title="Double Digits" 
+            winText="₹ 1000" 
+            price="11.00" 
+            gameName={getGameName()} 
+            customRows={[
+              { labels: ['A', 'B'], digits: 2 },
+              { labels: ['B', 'C'], digits: 2 },
+              { labels: ['A', 'C'], digits: 2 }
+            ]}
+          />
+          
+          <BettingCard 
+            title="Three Digits" 
+            digits={3} 
+            gameName={getGameName()} 
+            priceOptions={abcTiers}
+          />
 
-          {/* 3D FORMAT */}
-          <div className="mb-10">
-            <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-4 ml-2 border-l-4 border-emerald-500 pl-3">3D Format Slots</h4>
+          {isKerala && (
             <BettingCard 
-              title="3D Slot ABC" 
-              digits={3} 
-              gameName={getGameName()} 
-              priceOptions={abcTiers}
-              board="ABC"
-            />
-          </div>
-
-          {/* 4D FORMAT */}
-          <div className="mb-6">
-            <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-4 ml-2 border-l-4 border-purple-500 pl-3">4D Format Slots</h4>
-            <BettingCard 
-              title="4D Slot XABC" 
+              title="4D XABC" 
               digits={4} 
               gameName={getGameName()} 
               priceOptions={xabcTiers}
-              board="XABC"
             />
-          </div>
+          )}
         </div>
 
-        {/* Floating Cart Button */}
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-full max-w-[440px] px-4 z-50">
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 w-full max-w-[480px] p-4 bg-transparent z-50">
            <button 
              onClick={() => navigate('/cart')}
-             disabled={closed || cart.length === 0}
-             className={`w-full h-16 rounded-2xl flex items-center justify-between px-8 font-black shadow-2xl transition-all active:scale-95 ${
-               closed || cart.length === 0 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-[#ff004d] text-white'
-             }`}
+             disabled={closed}
+             className={`w-full text-white py-4 rounded-xl flex items-center justify-center gap-2 font-black text-xl shadow-xl relative ${closed ? 'bg-gray-400' : 'bg-[#ff0055]'}`}
            >
-             <div className="flex items-center gap-3">
-                <div className="relative">
-                  <ShoppingCart size={24} />
-                  {cart.length > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-white text-[#ff004d] w-5 h-5 rounded-full text-[9px] flex items-center justify-center border border-current font-black animate-bounce">{cart.length}</span>
-                  )}
-                </div>
-                <span className="uppercase tracking-widest text-[11px]">Review Cart</span>
-             </div>
-             <div className="text-[11px] uppercase tracking-tighter">
-                Proceed to Pay <ShoppingCart size={14} className="inline ml-1" />
-             </div>
+             <ShoppingCart size={24} /> {closed ? 'Closed' : 'Pay now'}
+             {cart.length > 0 && !closed && (
+                <span className="absolute -top-2 -right-2 bg-black text-white w-7 h-7 rounded-full text-[12px] flex items-center justify-center border-2 border-white font-black animate-bounce">{cart.length}</span>
+             )}
            </button>
         </div>
       </div>
