@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 
 const CartPage = () => {
   const navigate = useNavigate();
-  const { cart, removeFromCart, clearCart, cartTotal } = useCart();
+  const { cart, removeFromCart, clearCart, cartTotal, confirmPurchase } = useCart();
   const { user } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -15,11 +15,11 @@ const CartPage = () => {
     if (cart.length === 0) return;
     setIsProcessing(true);
     setTimeout(() => {
-      alert("Payment Successful! Your tickets are booked.");
-      clearCart();
+      confirmPurchase();
+      alert("Payment Successful! Your tickets are recorded in our system.");
       setIsProcessing(false);
-      navigate('/home');
-    }, 2000);
+      navigate('/tickets');
+    }, 1500);
   };
 
   const currentDate = new Date().toLocaleDateString('en-GB');

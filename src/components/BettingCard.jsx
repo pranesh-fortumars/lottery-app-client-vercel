@@ -44,7 +44,7 @@ const BettingCard = ({ title, winText: initialWinText, price: initialPrice, digi
       }
     };
     permute([], arr);
-    return [...new Set(results)]; // Remove duplicates (e.g., if 112 is entered)
+    return [...new Set(results)]; 
   };
 
   const handleBox = (rowIdx) => {
@@ -61,7 +61,8 @@ const BettingCard = ({ title, winText: initialWinText, price: initialPrice, digi
         num: num,
         qty: row.qty,
         price: parseFloat(currentPrice),
-        board: 'ABC'
+        board: 'ABC',
+        playType: '3D'
       });
     });
 
@@ -89,7 +90,8 @@ const BettingCard = ({ title, winText: initialWinText, price: initialPrice, digi
       num: row.numbers.join(''),
       qty: row.qty,
       price: parseFloat(currentPrice),
-      board: boardLabel
+      board: boardLabel,
+      playType: `${digits}D`
     });
 
     const newRows = [...rows];
@@ -103,9 +105,6 @@ const BettingCard = ({ title, winText: initialWinText, price: initialPrice, digi
     setRows(newRows);
   };
 
-  // Label logic based on user request:
-  // 3-digit: A, B, C
-  // 4-digit: D, A, B, C
   const getLabel = (idx) => {
     if (digits === 3) return ['A', 'B', 'C'][idx];
     if (digits === 4) return ['D', 'A', 'B', 'C'][idx];

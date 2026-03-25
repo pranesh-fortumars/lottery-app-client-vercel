@@ -1,51 +1,70 @@
 import React from 'react';
 import PageWrapper from '../components/PageWrapper';
+import { useCart } from '../context/CartContext';
+import { Search, Trophy, History } from 'lucide-react';
 
 const ResultsPage = () => {
-  const results = [
-    { date: '05/03/2026', time: '08:00 PM', name: 'DEARLOT', nums: ['5', '2', '7'] },
-    { date: '05/03/2026', time: '06:00 PM', name: 'DEARLOT', nums: ['6', '1', '0'] },
-    { date: '05/03/2026', time: '03:00 PM', name: 'KERELALOT', nums: ['5', '8', '8', '5'] },
-    { date: '05/03/2026', time: '01:00 PM', name: 'DEARLOT', nums: ['3', '0', '9'] },
-  ];
+  const { declaredResults } = useCart();
 
   return (
     <PageWrapper title="DAILY RESULTS">
-      <div className="bg-white min-h-screen p-4 flex flex-col items-center">
-        {results.map((r, i) => (
-          <div key={i} className="mb-4 w-full max-w-sm">
-            <table className="w-full border-collapse border border-red-600 text-left">
-              <tbody>
-                <tr className="border border-red-600">
-                  <td className="w-[35%] p-1.5 border border-red-600 font-serif text-[1.1rem]">Date</td>
-                  <td className="p-1.5 border border-red-600 font-serif text-[1.1rem]">{r.date}</td>
-                </tr>
-                <tr className="border border-red-600">
-                  <td className="p-1.5 border border-red-600 font-serif text-[1.1rem]">Time</td>
-                  <td className="p-1.5 border border-red-600 font-serif text-[1.1rem]">{r.time}</td>
-                </tr>
-                <tr className="border border-red-600">
-                  <td className="p-1.5 border border-red-600 font-serif text-[1.1rem]">Lot Name</td>
-                  <td className="p-1.5 border border-red-600 font-serif text-[1.1rem] uppercase">{r.name}</td>
-                </tr>
-                <tr className="border border-red-600">
-                  <td className="p-1.5 border border-red-600 font-serif text-[1.1rem]">Result Number</td>
-                  <td className="p-1.5 border border-red-600">
-                    <div className="flex gap-2.5">
-                      {r.nums.map((n, j) => (
-                        <div key={j} className="w-9 h-9 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                          {n}
-                        </div>
-                      ))}
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+      <div className="bg-white min-h-screen p-4 pb-24 flex flex-col items-center">
+        {/* Header Logic */}
+        <div className="w-full max-w-sm bg-[#ff0033] text-white p-4 rounded-2xl mb-8 flex justify-between items-center shadow-xl relative overflow-hidden">
+           <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12 blur-xl"></div>
+           <div>
+              <h3 className="text-lg font-black uppercase tracking-tighter italic italic">Live Results Board</h3>
+              <p className="text-[8px] font-black uppercase tracking-widest opacity-60">Real-time sync enabled</p>
+           </div>
+           <Trophy size={32} fill="white" className="opacity-40" />
+        </div>
+
+        {declaredResults.length === 0 ? (
+          <div className="py-20 text-center space-y-4 opacity-30">
+             <History size={48} className="mx-auto text-gray-400" />
+             <p className="text-xs font-black uppercase tracking-widest">Awaiting declaration for today's slots...</p>
           </div>
-        ))}
-        <div className="mt-8 text-center opacity-30">
-           <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 italic">Results verified by board</p>
+        ) : (
+          declaredResults.map((r, i) => (
+            <div key={i} className="mb-8 w-full max-w-sm group">
+              <div className="flex items-center gap-2 mb-2 ml-1">
+                 <div className="w-1.5 h-1.5 bg-[#ff0033] rounded-full animate-pulse shadow-[0_0_5px_#ff0033]"></div>
+                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Draw Entry #{r.id.toString().slice(-4)}</span>
+              </div>
+              <table className="w-full border-collapse border border-red-600 text-left bg-white shadow-lg overflow-hidden rounded-xl">
+                <tbody>
+                  <tr className="border border-red-600">
+                    <td className="w-[35%] p-3 border-r border-red-600 font-black text-[9px] uppercase tracking-widest bg-gray-50/50">Draw Date</td>
+                    <td className="p-3 font-black text-gray-800 text-xs tracking-tight italic">{r.date}</td>
+                  </tr>
+                  <tr className="border border-red-600">
+                    <td className="p-3 border-r border-red-600 font-black text-[9px] uppercase tracking-widest bg-gray-50/50">Draw Time</td>
+                    <td className="p-3 font-black text-gray-800 text-xs tracking-tight italic">{r.draw}</td>
+                  </tr>
+                  <tr className="border border-red-600">
+                    <td className="p-3 border-r border-red-600 font-black text-[9px] uppercase tracking-widest bg-gray-50/50">Lot Name</td>
+                    <td className="p-3 font-black text-[#ff0033] text-xs tracking-tight uppercase italic">{r.brand} LOTTERY</td>
+                  </tr>
+                  <tr className="border border-red-600 bg-red-50/30">
+                    <td className="p-3 border-r border-red-600 font-black text-[9px] uppercase tracking-widest bg-red-600 text-white">Winning Digits</td>
+                    <td className="p-3">
+                      <div className="flex gap-2.5">
+                        {r.number.split('').map((n, j) => (
+                          <div key={j} className="w-10 h-10 bg-gray-900 border-b-4 border-red-600 rounded-xl flex items-center justify-center text-white font-black text-xl italic shadow-md">
+                            {n}
+                          </div>
+                        ))}
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          ))
+        )}
+        
+        <div className="mt-12 text-center opacity-30 border-t border-gray-100 pt-8 w-full max-w-xs">
+           <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 italic italic leading-relaxed">Transactions & results are hardware encrypted and board verified for security.</p>
         </div>
       </div>
     </PageWrapper>
