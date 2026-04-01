@@ -60,28 +60,32 @@ const BettingCard = ({ title, winText: initialWinText, price: initialPrice, digi
 
   const handleBox = (rowIdx) => {
     const row = rows[rowIdx];
+    const len = row.numbers.length;
     if (row.numbers.some(n => n === '')) {
-      alert("Please enter all 3 numbers for BOX");
+      alert(`Please enter all ${len} numbers for BOX`);
       return;
     }
     
     const permutations = getPermutations(row.numbers);
+    const typeLabel = len === 3 ? '3D' : '4D';
+    const posLabel = len === 3 ? 'ABC' : 'XABC';
+
     permutations.forEach(num => {
       addToCart({
         title: `${gameName} - ${title} (BOX) (Price: ${currentPrice})`,
         num: num,
         qty: row.qty,
         price: parseFloat(currentPrice),
-        type: '3D',
-        pos: 'ABC',
-        board: 'ABC'
+        type: typeLabel,
+        pos: posLabel,
+        board: posLabel
       });
     });
 
     const newRows = [...rows];
     newRows[rowIdx].numbers = Array(row.numbers.length).fill('');
     setRows(newRows);
-    alert(`Added ${permutations.length} combinations to cart!`);
+    alert(`Added ${permutations.length} unique combinations (BOX) to cart!`);
   };
 
   const handleAdd = (rowIdx) => {
@@ -204,7 +208,7 @@ const BettingCard = ({ title, winText: initialWinText, price: initialPrice, digi
              </div>
 
              <div className="flex gap-1 shrink-0">
-                {row.numbers.length === 3 && (
+                {(row.numbers.length === 3 || row.numbers.length === 4) && (
                    <button 
                      onClick={() => handleBox(rowIdx)}
                      className="bg-gray-800 text-white px-2 py-2 rounded-lg font-black text-[9px] uppercase shadow-md active:scale-95 border-b-4 border-gray-950"
