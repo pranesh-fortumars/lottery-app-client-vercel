@@ -34,6 +34,20 @@ const ProtectedRoute = ({ children, role }) => {
   return children;
 };
 
+// --- Multi-Port Landing Logic ---
+const LandingPage = () => {
+  const { user } = useAuth();
+  const side = import.meta.env.VITE_APP_SIDE || 'all';
+
+  if (!user) return <Navigate to="/login" replace />;
+
+  if (side === 'admin') return <Navigate to="/admin" replace />;
+  if (side === 'user') return <Navigate to="/home" replace />;
+
+  // Default: Go to dashboard based on role
+  return user.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/home" replace />;
+};
+
 function App() {
   return (
     <AuthProvider>
@@ -41,6 +55,7 @@ function App() {
       <Router>
       <AnimatePresence mode="wait">
         <Routes>
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
@@ -72,7 +87,7 @@ function App() {
           <Route path="/admin/reports" element={<ProtectedRoute role="admin"><AdminLayout><AdminReports /></AdminLayout></ProtectedRoute>} />
           <Route path="/admin/settings" element={<ProtectedRoute role="admin"><AdminLayout><AdminSettings /></AdminLayout></ProtectedRoute>} />
           
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AnimatePresence>
     </Router>

@@ -1,10 +1,12 @@
 {
   "name": "lottery-application",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "start:user": "vite --port 3000 --mode user",
+    "start:admin": "vite --port 3001 --mode admin",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
