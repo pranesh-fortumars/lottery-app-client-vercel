@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import PageWrapper from '../components/PageWrapper';
-import { Ticket, Clock, Calendar, CheckCircle2, ChevronRight, ShoppingBag, Receipt, Printer, FileText } from 'lucide-react';
+import { Ticket, Clock, Calendar, CheckCircle2, ChevronRight, ShoppingBag, Receipt, Printer, FileText, Trophy, Coins, Sparkles } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -16,6 +16,7 @@ const MyTickets = () => {
       if (!groups[id]) {
         groups[id] = {
           id: id,
+          status: 'Active',
           date: ticket.purchaseDate || 'N/A',
           time: ticket.purchaseTime || 'N/A',
           market: ticket.title.includes('DEAR') ? 'Dear' : 'Kerala',
@@ -54,9 +55,37 @@ const MyTickets = () => {
               const totalItems = group.tickets.length;
               const grandQty = group.tickets.reduce((sum, t) => sum + t.qty, 0);
               const totalAmount = group.tickets.reduce((sum, t) => sum + (t.qty * t.price), 0);
+              
+              const winningTickets = group.tickets.filter(t => t.status === 'Won');
+              const isWinner = winningTickets.length > 0;
+              const totalWinningPrize = winningTickets.reduce((sum, t) => {
+                 const prizeMatch = t.prize.replace(/[^\d]/g, '');
+                 return sum + (parseInt(prizeMatch) || 0);
+              }, 0);
+
+              const isAllClosed = group.tickets.every(t => t.status === 'Closed' || t.status === 'Won');
 
               return (
-                <div key={group.id} className="bg-white rounded-[2rem] shadow-2xl border border-red-50 overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
+                <div key={group.id} className={`bg-white rounded-[2rem] shadow-2xl border-2 overflow-hidden animate-in slide-in-from-bottom-4 duration-500 transition-all ${isWinner ? 'border-amber-400' : 'border-red-50'}`}>
+                  
+                  {/* --- WINNER BANNER (Dynamic Reveal) --- */}
+                  {isWinner && (
+                    <div className="bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 px-6 py-4 flex items-center justify-between text-white shadow-lg overflow-hidden relative">
+                       <div className="absolute top-0 right-[-20px] opacity-20"><Trophy size={80} /></div>
+                       <div className="flex items-center gap-4 z-10">
+                          <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center animate-pulse"><Sparkles size={20} /></div>
+                          <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-80 italic">Congratulations!</p>
+                            <h4 className="text-xl font-black font-condensed italic tracking-tighter uppercase leading-none">Jackpot Winning Ticket</h4>
+                          </div>
+                       </div>
+                       <div className="text-right z-10">
+                          <p className="text-[9px] font-black uppercase italic mb-1">Draw Prize</p>
+                          <p className="text-2xl font-black font-condensed italic tracking-tighter">₹ {totalWinningPrize.toLocaleString()}</p>
+                       </div>
+                    </div>
+                  )}
+
                   {/* --- Header Match to Image --- */}
                   <div className="bg-white p-5 border-b-[1.5px] border-red-100 flex justify-between items-center bg-gradient-to-r from-red-50/20 to-white">
                      <div className="flex flex-col">
@@ -126,13 +155,30 @@ const MyTickets = () => {
                                    <span className="text-xl font-black font-condensed italic">{grandQty}</span>
                                 </div>
                              </td>
-                             <td className="px-3 py-5"></td>
-                             <td className="px-5 py-5 text-right">
-                                <div className="flex flex-col">
-                                   <span className="text-[7px] font-black uppercase opacity-60 tracking-widest mb-1 italic underline decoration-[#ff0000] underline-offset-4">Total Amount</span>
-                                   <span className="text-2xl font-black font-condensed italic text-white tracking-widest">₹ {totalAmount.toLocaleString()}</span>
-                                </div>
-                             </td>
+                             {(isWinner || isAllClosed) ? (
+                                <td colSpan="2" className="px-5 py-5 text-right">
+                                   <div className="flex justify-between items-end gap-10">
+                                      <div className="flex flex-col items-end">
+                                         <span className="text-[7px] font-black uppercase opacity-60 tracking-widest mb-1 italic">Total Paid</span>
+                                         <span className="text-lg font-black font-condensed italic text-gray-400 line-through">₹ {totalAmount.toLocaleString()}</span>
+                                      </div>
+                                      <div className="flex flex-col items-end">
+                                         <span className="text-[8px] font-black uppercase text-amber-400 tracking-widest mb-1 italic underline decoration-amber-400 underline-offset-4">WINNING PRIZE</span>
+                                         <span className="text-3xl font-black font-condensed italic text-amber-400 tracking-widest leading-none">₹ {totalWinningPrize.toLocaleString()}</span>
+                                      </div>
+                                   </div>
+                                </td>
+                             ) : (
+                                <>
+                                 <td className="px-3 py-5"></td>
+                                 <td className="px-5 py-5 text-right text-red-600">
+                                    <div className="flex flex-col">
+                                       <span className="text-[7px] font-black uppercase opacity-60 tracking-widest mb-1 italic underline decoration-[#ff0000] underline-offset-4">Total Amount</span>
+                                       <span className="text-2xl font-black font-condensed italic text-white tracking-widest">₹ {totalAmount.toLocaleString()}</span>
+                                    </div>
+                                 </td>
+                                </>
+                             )}
                           </tr>
                        </tfoot>
                     </table>
@@ -172,7 +218,7 @@ const MyTickets = () => {
   );
 };
 
-// Simple import to fix build if needed
+// Simple icon component to ensure visibility
 const ShieldCheck = ({ size, className }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 .52-.88l7-4a1 1 0 0 1 .96 0l7 4A1 1 0 0 1 20 6z"/><path d="m9 12 2 2 4-4"/></svg>
 );

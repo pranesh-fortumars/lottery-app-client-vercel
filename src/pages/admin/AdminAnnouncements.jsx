@@ -110,7 +110,6 @@ const AdminAnnouncements = () => {
     const { X, A, B, C } = resultDigits;
     if (!X || !A || !B || !C) return alert("Please enter all 4 result digits.");
 
-    // Check if result already announced for this slot
     const already = declaredResults.find(r => r.draw === selectedSlot && r.date === new Date().toLocaleDateString());
     if (already) return alert("Error: Results for this slot are already declared for today.");
 
@@ -124,14 +123,12 @@ const AdminAnnouncements = () => {
 
     addResult(resultData);
     alert(`RESULT ANNOUNCED: ${X}${A}${B}${C} for ${marketSelection} ${selectedSlot}`);
-    
-    // Reset to Root
     setWorkflowStep('root');
     setResultDigits({ X: '', A: '', B: '', C: '' });
   };
 
   const exportToPDF = () => {
-    alert("Preparing Export... PDF Report Generated for Admin Hub.");
+    alert("Preparing Export... PDF Report Generated.");
   };
 
   return (
@@ -221,7 +218,6 @@ const AdminAnnouncements = () => {
                     );
                   })}
                </div>
-               <p className="text-[9px] font-black text-gray-400 uppercase text-center italic mt-4">Manual override may be enabled for development testing.</p>
             </div>
           )}
 
@@ -250,25 +246,46 @@ const AdminAnnouncements = () => {
                   </div>
 
                   {/* Prize Configuration */}
-                  <div className="grid grid-cols-2 gap-4">
-                     <div className="bg-gray-50/50 p-5 rounded-2xl border border-gray-100 space-y-4">
-                        <p className="text-[9px] font-black text-red-500 uppercase tracking-widest">1D Prizes</p>
-                        {['A', 'B', 'C'].map(p => (
-                          <div key={p} className="flex items-center justify-between gap-2">
-                             <span className="text-[10px] font-black text-gray-400 italic">{p}</span>
-                             <input type="number" value={prizeConfigs['1D'][p]} onChange={(e) => setPrizeConfigs({...prizeConfigs, '1D': {...prizeConfigs['1D'], [p]: e.target.value}})} className="w-20 bg-white border border-gray-200 rounded-lg py-1 px-2 text-xs font-black" />
-                          </div>
-                        ))}
-                     </div>
-                     <div className="bg-gray-50/50 p-5 rounded-2xl border border-gray-100 space-y-4">
-                        <p className="text-[9px] font-black text-red-500 uppercase tracking-widest">2D Prizes</p>
-                        {['AB', 'BC', 'AC'].map(p => (
-                          <div key={p} className="flex items-center justify-between gap-2">
-                             <span className="text-[10px] font-black text-gray-400 italic">{p}</span>
-                             <input type="number" value={prizeConfigs['2D'][p]} onChange={(e) => setPrizeConfigs({...prizeConfigs, '2D': {...prizeConfigs['2D'], [p]: e.target.value}})} className="w-20 bg-white border border-gray-200 rounded-lg py-1 px-2 text-xs font-black" />
-                          </div>
-                        ))}
-                     </div>
+                  <div className="space-y-4">
+                      {/* Row 1: 1D & 2D */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-gray-50/50 p-5 rounded-2xl border border-gray-100 space-y-4">
+                            <p className="text-[9px] font-black text-red-500 uppercase tracking-widest">1D Prizes</p>
+                            {['A', 'B', 'C'].map(p => (
+                            <div key={p} className="flex items-center justify-between gap-2">
+                                <span className="text-[10px] font-black text-gray-400 italic">{p}</span>
+                                <input type="number" value={prizeConfigs['1D'][p]} onChange={(e) => setPrizeConfigs({...prizeConfigs, '1D': {...prizeConfigs['1D'], [p]: e.target.value}})} className="w-20 bg-white border border-gray-200 rounded-lg py-1 px-2 text-xs font-black" />
+                            </div>
+                            ))}
+                        </div>
+                        <div className="bg-gray-50/50 p-5 rounded-2xl border border-gray-100 space-y-4">
+                            <p className="text-[9px] font-black text-red-500 uppercase tracking-widest">2D Prizes</p>
+                            {['AB', 'BC', 'AC'].map(p => (
+                            <div key={p} className="flex items-center justify-between gap-2">
+                                <span className="text-[10px] font-black text-gray-400 italic">{p}</span>
+                                <input type="number" value={prizeConfigs['2D'][p]} onChange={(e) => setPrizeConfigs({...prizeConfigs, '2D': {...prizeConfigs['2D'], [p]: e.target.value}})} className="w-20 bg-white border border-gray-200 rounded-lg py-1 px-2 text-xs font-black" />
+                            </div>
+                            ))}
+                        </div>
+                      </div>
+
+                      {/* Row 2: 3D & 4D (New Allocation Section) */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-gray-50/50 p-5 rounded-2xl border border-gray-100 space-y-4">
+                            <p className="text-[9px] font-black text-red-500 uppercase tracking-widest">3D Prize (ABC)</p>
+                            <div className="flex items-center justify-between gap-2">
+                                <span className="text-[10px] font-black text-gray-400 italic">Triple</span>
+                                <input type="number" value={prizeConfigs['3D'].ABC} onChange={(e) => setPrizeConfigs({...prizeConfigs, '3D': {...prizeConfigs['3D'], ABC: e.target.value}})} className="w-full bg-white border border-gray-200 rounded-xl py-3 px-4 text-xs font-black" />
+                            </div>
+                        </div>
+                        <div className="bg-gray-50/50 p-5 rounded-2xl border border-gray-100 space-y-4">
+                            <p className="text-[9px] font-black text-red-500 uppercase tracking-widest">4D Prize (XABC)</p>
+                            <div className="flex items-center justify-between gap-2">
+                                <span className="text-[10px] font-black text-gray-400 italic">Jackpot</span>
+                                <input type="number" value={prizeConfigs['4D'].XABC} onChange={(e) => setPrizeConfigs({...prizeConfigs, '4D': {...prizeConfigs['4D'], XABC: e.target.value}})} className="w-full bg-white border border-gray-200 rounded-xl py-3 px-4 text-xs font-black" />
+                            </div>
+                        </div>
+                      </div>
                   </div>
 
                   <button onClick={handleDeclareResult} className="w-full bg-[#ff0000] text-white py-5 rounded-[1.5rem] font-black text-sm uppercase tracking-widest shadow-2xl shadow-[#ff0000]/20 active:scale-95 transition-all outline-none border-b-4 border-black/20">DECLARE RESULT & PAYOUT</button>
@@ -278,7 +295,6 @@ const AdminAnnouncements = () => {
         </div>
       )}
 
-      {/* History tab implementation remains the same (Official Result Record) */}
       {activeTab === 'history' && (
         <div className="p-4 bg-white animate-in slide-in-from-bottom-4 duration-500">
            <div className="flex items-center justify-between mb-8 border-b-2 border-red-100 pb-6 px-2">
