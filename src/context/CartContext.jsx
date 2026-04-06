@@ -14,13 +14,11 @@ export const useCart = () => {
 export const CartProvider = ({ children }) => {
   const { user, updateBalance } = useAuth();
 
-  // --- Helper to load from localStorage ---
   const load = (key, defaultVal) => {
     const saved = localStorage.getItem(key);
     return saved ? JSON.parse(saved) : defaultVal;
   };
 
-  // --- States ---
   const [cart, setCart] = useState(() => load('diamond_cart', []));
   const [purchasedTickets, setPurchasedTickets] = useState(() => load('diamond_purchased_tickets', []));
   const [declaredResults, setDeclaredResults] = useState(() => load('diamond_results', []));
@@ -28,33 +26,20 @@ export const CartProvider = ({ children }) => {
     { id: 1, title: 'Welcome to Diamond!', message: 'Start your lottery journey today.', time: 'Just now', read: false, type: 'info' }
   ]));
 
-  // --- Persistence Effects ---
   useEffect(() => { localStorage.setItem('diamond_cart', JSON.stringify(cart)); }, [cart]);
   useEffect(() => { localStorage.setItem('diamond_purchased_tickets', JSON.stringify(purchasedTickets)); }, [purchasedTickets]);
   useEffect(() => { localStorage.setItem('diamond_results', JSON.stringify(declaredResults)); }, [declaredResults]);
   useEffect(() => { localStorage.setItem('diamond_notifications', JSON.stringify(notifications)); }, [notifications]);
 
-  // --- ⚡ CROSS-TAB DYNAMIC SYNC (Crucial for Multi-Port Experience) ⚡ ---
   useEffect(() => {
     const handleStorageChange = (e) => {
-      if (e.key === 'diamond_results') {
-         const newResults = JSON.parse(e.newValue);
-         setDeclaredResults(newResults);
-      }
-      if (e.key === 'diamond_purchased_tickets') {
-         setPurchasedTickets(JSON.parse(e.newValue));
-      }
-      if (e.key === 'diamond_notifications') {
-         setNotifications(JSON.parse(e.newValue));
-      }
-      if (e.key === 'diamond_balance' && user) {
-         // Balance sync across tabs is handled by AuthContext if needed, 
-         // but let's ensure we refresh tickets if a result was declared.
-      }
+      if (e.key === 'diamond_results') setDeclaredResults(JSON.parse(e.newValue));
+      if (e.key === 'diamond_purchased_tickets') setPurchasedTickets(JSON.parse(e.newValue));
+      if (e.key === 'diamond_notifications') setNotifications(JSON.parse(e.newValue));
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [user]);
+  }, []);
 
   const addToCart = (entry) => setCart((prev) => [...prev, { ...entry, id: Date.now() }]);
   const removeFromCart = (id) => setCart((prev) => prev.filter((item) => item.id !== id));
@@ -62,19 +47,26 @@ export const CartProvider = ({ children }) => {
 
   const confirmPurchase = () => {
     if (cart.length === 0) return;
-    const timestamp = new Date().toLocaleString();
+    
+    const transactionId = `TX${Math.floor(100000 + Math.random() * 900000)}`;
+    const purchaseDate = new Date().toLocaleDateString();
+    const purchaseTime = new Date().toLocaleTimeString();
+
     const newPurchases = cart.map(item => ({
       ...item,
-      purchaseId: `TX${Math.floor(1000 + Math.random() * 9000)}`,
-      purchaseTime: timestamp,
+      purchaseId: transactionId,
+      purchaseDate: purchaseDate,
+      purchaseTime: purchaseTime,
+      fullPurchaseTime: `${purchaseDate}, ${purchaseTime}`,
       status: 'Active',
       prize: '-'
     }));
+
     setPurchasedTickets((prev) => [...newPurchases, ...prev]);
     clearCart();
     addNotification({
        title: 'Tickets Confirmed!',
-       message: `Your purchase of ${cart.length} tickets is successful.`,
+       message: `Purchase of ${cart.length} tickets successful. ID: ${transactionId}`,
        type: 'success'
     });
   };
@@ -89,19 +81,15 @@ export const CartProvider = ({ children }) => {
   const addResult = (resultData) => {
     const { digits, prizes } = resultData;
     const fullNum = `${digits.X}${digits.A}${digits.B}${digits.C}`;
-    
-    // 1. Save Result
     const newResultEntry = { ...resultData, id: Date.now(), date: new Date().toLocaleDateString(), status: 'Active', number: fullNum };
     setDeclaredResults((prev) => [newResultEntry, ...prev]);
 
-    // 2. Notify Global
     addNotification({
       title: `${resultData.brand} Result Out!`,
       message: `The results for ${resultData.draw} are out. Winning: ${fullNum}`,
       type: 'result'
     });
 
-    // 3. Process Winners (Dynamic calculation)
     let userWon = false;
     let totalWinAmount = 0;
 
@@ -111,7 +99,6 @@ export const CartProvider = ({ children }) => {
 
       let isWinner = false;
       let wonPrize = 0;
-
       const combinations = {
         '1D_A': digits.A, '1D_B': digits.B, '1D_C': digits.C,
         '2D_AB': `${digits.A}${digits.B}`, '2D_BC': `${digits.B}${digits.C}`, '2D_AC': `${digits.A}${digits.C}`,
@@ -123,15 +110,10 @@ export const CartProvider = ({ children }) => {
       const tType = ticket.type; 
       const tPos = ticket.pos;   
 
-      if (tType === '1D') {
-         if (tNum === combinations[`1D_${tPos}`]) { isWinner = true; wonPrize = parseFloat(prizes['1D'][tPos]); }
-      } else if (tType === '2D (DOUBLE)') {
-         if (tNum === combinations[`2D_${tPos}`]) { isWinner = true; wonPrize = parseFloat(prizes['2D'][tPos]); }
-      } else if (tType === '3D') {
-         if (tNum === combinations['3D_ABC']) { isWinner = true; wonPrize = parseFloat(prizes['3D'].ABC); }
-      } else if (tType === '4D') {
-         if (tNum === combinations['4D_XABC']) { isWinner = true; wonPrize = parseFloat(prizes['4D'].XABC); }
-      }
+      if (tType === '1D') { if (tNum === combinations[`1D_${tPos}`]) { isWinner = true; wonPrize = parseFloat(prizes['1D'][tPos]); } }
+      else if (tType === '2D (DOUBLE)') { if (tNum === combinations[`2D_${tPos}`]) { isWinner = true; wonPrize = parseFloat(prizes['2D'][tPos]); } }
+      else if (tType === '3D') { if (tNum === combinations['3D_ABC']) { isWinner = true; wonPrize = parseFloat(prizes['3D'].ABC); } }
+      else if (tType === '4D') { if (tNum === combinations['4D_XABC']) { isWinner = true; wonPrize = parseFloat(prizes['4D'].XABC); } }
 
       if (isWinner) {
         const totalAward = wonPrize * ticket.qty;
@@ -140,7 +122,7 @@ export const CartProvider = ({ children }) => {
         updateBalance(totalAward);
         return { ...ticket, status: 'Won', prize: `₹ ${totalAward.toLocaleString()}` };
       }
-      return { ...ticket, status: 'Closed' }; // Mark as finished if not won
+      return { ...ticket, status: 'Closed' }; 
     });
 
     if (userWon) {
