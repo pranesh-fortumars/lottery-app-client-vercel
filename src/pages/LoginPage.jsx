@@ -2,24 +2,41 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import PageWrapper from '../components/PageWrapper';
-import { LogIn, Lock, UserPlus, HelpCircle } from 'lucide-react';
+import { LogIn, Lock, UserPlus, HelpCircle, AlertCircle } from 'lucide-react';
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [mobile, setMobile] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    const result = login(mobile, password);
+    setError('');
+    setLoading(true);
+
+    let loginEmail = identifier;
+    
+    // Logic to handle admin/user aliases or mobile numbers
+    if (identifier.toLowerCase() === 'admin') {
+      loginEmail = 'admin@lottery.com';
+    } else if (identifier.toLowerCase() === 'user') {
+      loginEmail = 'user@lottery.com'; // Default user for testing if needed
+    } else if (/^\d{10}$/.test(identifier)) {
+      loginEmail = `${identifier}@lottery.com`;
+    } else if (!identifier.includes('@')) {
+       // Fallback for other potential IDs
+       loginEmail = `${identifier}@lottery.com`;
+    }
+
+    const result = await login(loginEmail, password);
+    setLoading(false);
+
     if (result.success) {
-      if (result.role === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/home');
-      }
+      // The user object is updated in context automatically by onAuthStateChanged
+      navigate('/home'); 
     } else {
       setError(result.message);
     }
@@ -28,25 +45,30 @@ const LoginPage = () => {
   return (
     <PageWrapper title="LOGIN ACCESS" showNav={false}>
       <div className="bg-white min-h-screen p-4 flex flex-col items-center">
-        {error && <p className="w-full bg-red-50 text-red-500 text-[10px] font-black uppercase text-center py-3 rounded-xl mb-4 italic border border-red-100">{error}</p>}
+        {error && (
+          <div className="w-full bg-red-50 text-red-500 p-4 rounded-2xl mb-4 flex items-center gap-3 text-xs font-bold border border-red-100 italic">
+            <AlertCircle size={16} /> {error}
+          </div>
+        )}
         
         <form className="w-full space-y-4 pt-10" onSubmit={handleLogin}>
-          {/* Phone Number Input Group */}
-          <div className="flex border border-gray-200 rounded-2xl overflow-hidden h-14 bg-gray-50/50 shadow-sm focus-within:border-[#f42464]/30 transition-all">
+          {/* ID Input Group */}
+          <div className="flex border border-gray-200 rounded-2xl overflow-hidden h-14 bg-gray-50/50 shadow-sm focus-within:border-red-200 transition-all">
             <div className="bg-gray-100/50 px-5 flex items-center justify-center border-r border-gray-100 text-gray-400 font-black text-[10px] uppercase tracking-widest">
               ID
             </div>
             <input 
               className="flex-grow px-4 outline-none border-none focus:ring-0 text-sm font-bold text-gray-700 bg-transparent placeholder:text-gray-300" 
-              placeholder="Enter admin or user" 
+              placeholder="Enter ID or Mobile Number" 
               type="text"
-              value={mobile}
-              onChange={(e) => setMobile(e.target.value)}
+              required
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
             />
           </div>
 
           {/* Password Input Group */}
-          <div className="flex border border-gray-200 rounded-2xl overflow-hidden h-14 bg-gray-50/50 shadow-sm focus-within:border-[#f42464]/30 transition-all">
+          <div className="flex border border-gray-200 rounded-2xl overflow-hidden h-14 bg-gray-50/50 shadow-sm focus-within:border-red-200 transition-all">
             <div className="bg-gray-100/50 px-5 flex items-center justify-center border-r border-gray-100">
                <Lock size={16} className="text-gray-400" />
             </div>
@@ -54,14 +76,19 @@ const LoginPage = () => {
               className="flex-grow px-4 outline-none border-none focus:ring-0 text-sm font-bold text-gray-700 bg-transparent placeholder:text-gray-300" 
               placeholder="Enter your password" 
               type="password"
+              required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
 
           <div className="pt-6 space-y-4">
-            <button className="w-full bg-[#ff0000] text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2" type="submit">
-               Confirm Identity <LogIn size={16} />
+            <button 
+              disabled={loading}
+              className="w-full bg-[#ff0000] text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50" 
+              type="submit"
+            >
+               {loading ? "Verifying..." : "Confirm Identity"} <LogIn size={16} />
             </button>
             
             <div className="flex gap-4">
@@ -92,3 +119,4 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
+
