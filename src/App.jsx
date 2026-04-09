@@ -34,18 +34,15 @@ const ProtectedRoute = ({ children, role }) => {
   return children;
 };
 
-// --- Multi-Port Landing Logic ---
+// --- Unified Landing Logic ---
 const LandingPage = () => {
   const { user } = useAuth();
-  const side = import.meta.env.VITE_APP_SIDE || 'all';
-
   if (!user) return <Navigate to="/login" replace />;
 
-  if (side === 'admin') return <Navigate to="/admin" replace />;
-  if (side === 'user') return <Navigate to="/home" replace />;
-
-  // Default: Go to dashboard based on role
-  return user.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/home" replace />;
+  // Redirect based on database role from a single port
+  return user.role === 'admin' 
+    ? <Navigate to="/admin" replace /> 
+    : <Navigate to="/home" replace />;
 };
 
 function App() {

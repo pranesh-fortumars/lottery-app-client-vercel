@@ -196,7 +196,7 @@ export const CartProvider = ({ children }) => {
     processAudit();
   }, [declaredResults, purchasedTickets, user]);
 
-  const addToCart = (entry) => setCart((prev) => [...prev, { ...entry, id: Date.now() }]);
+  const addToCart = (entry) => setCart((prev) => [...prev, { ...entry, id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}` }]);
   const removeFromCart = (id) => setCart((prev) => prev.filter((item) => item.id !== id));
   const clearCart = () => setCart([]);
 
