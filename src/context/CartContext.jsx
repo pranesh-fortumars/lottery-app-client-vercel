@@ -60,13 +60,30 @@ export const CartProvider = ({ children }) => {
     });
 
     const unsubscribeResults = onSnapshot(collection(db, 'results'), (snapshot) => {
-      const results = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-      const sortedResults = results.sort((a, b) => {
+      const allResults = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+      
+      // 1. Sort by newest first
+      const sorted = allResults.sort((a, b) => {
         const timeA = a.timestamp?.toMillis ? a.timestamp.toMillis() : Date.now();
         const timeB = b.timestamp?.toMillis ? b.timestamp.toMillis() : Date.now();
-        return timeB - timeA;
+        if (timeB !== timeA) return timeB - timeA;
+        return String(b.id).localeCompare(String(a.id)); 
       });
-      setDeclaredResults(sortedResults);
+
+      // 2. Deduplicate: Only keep the latest declaration for each unique draw/market slot
+      const uniqueResults = [];
+      const seenSlots = new Set();
+
+      sorted.forEach(res => {
+        // Use a composite key of date and draw time to ensure corrections work across different days
+        const slotKey = `${res.date}_${res.draw}`;
+        if (!seenSlots.has(slotKey)) {
+          uniqueResults.push(res);
+          seenSlots.add(slotKey);
+        }
+      });
+
+      setDeclaredResults(uniqueResults);
     });
 
     const unsubscribeNotifs = onSnapshot(collection(db, 'notifications'), (snapshot) => {
@@ -115,28 +132,23 @@ export const CartProvider = ({ children }) => {
     const processAudit = async () => {
       if (!user?.uid || declaredResults.length === 0 || purchasedTickets.length === 0) return;
 
-      // Ensure we only process the LATEST declaration for each unique draw slot
       const latestResultsBySlot = {};
       [...declaredResults].forEach(res => {
-        const slot = String(res.draw || "").trim();
-        if (!latestResultsBySlot[slot]) {
-          latestResultsBySlot[slot] = res;
-        }
+        const slotKey = String(res.draw || "").trim();
+        if (!latestResultsBySlot[slotKey]) latestResultsBySlot[slotKey] = res;
       });
       const currentResults = Object.values(latestResultsBySlot);
-      
-      const activeUserTickets = purchasedTickets.filter(t => t && t.userId === user.uid && t.status === 'Active');
-      if (activeUserTickets.length === 0) return;
-
-      console.log(`[AUDIT] Scanning ${activeUserTickets.length} active tickets against ${currentResults.length} unique slots.`);
+      const userTickets = purchasedTickets.filter(t => t.userId === user.uid);
 
       for (const res of currentResults) {
         if (!res?.id || !res?.digits) continue;
         
         const resDraw = String(res.draw || "").trim();
-        const resultTickets = activeUserTickets.filter(t => String(t.draw || "").trim() === resDraw);
+        const ticketsToAudit = userTickets.filter(t => 
+          String(t.draw || "").trim() === resDraw && t.processedBy !== res.id
+        );
 
-        if (resultTickets.length === 0) continue;
+        if (ticketsToAudit.length === 0) continue;
 
         const winningCombos = {
           '1D_A': String(res.digits.A || ''), '1D_B': String(res.digits.B || ''), '1D_C': String(res.digits.C || ''),
@@ -148,56 +160,51 @@ export const CartProvider = ({ children }) => {
         };
 
         const batch = writeBatch(db);
-        let winInThisResult = 0;
+        let balanceAdj = 0;
         let anyChanges = false;
 
-        resultTickets.forEach(ticket => {
+        ticketsToAudit.forEach(ticket => {
           if (!ticket.id) return;
           try {
+            // Reverse old win if it exists
+            if (ticket.status === 'Won' && ticket.prize) {
+              const oldVal = parseInt(ticket.prize.replace(/[^\d]/g, '')) || 0;
+              balanceAdj -= oldVal;
+            }
+
             const lookupKey = `${ticket.type}_${ticket.pos}`;
             const targetNum = String(winningCombos[lookupKey] || '');
             const isWinner = String(ticket.num || '') === targetNum;
             
-            console.log(`[CHECK] Draw ${resDraw} | Ticket ${ticket.num} vs ${targetNum} -> ${isWinner ? 'WON' : 'LOSE'}`);
-
             const ticketRef = doc(db, 'tickets', String(ticket.id));
             if (isWinner) {
               const baseP = res.prizes?.[ticket.type]?.[ticket.pos] || 0;
               const wAmt = Number(baseP) * Number(ticket.qty || 1);
-              winInThisResult += wAmt;
+              balanceAdj += wAmt;
               batch.update(ticketRef, { 
-                status: 'Won', 
-                prize: `₹ ${wAmt}`,
-                payoutDate: serverTimestamp() 
+                status: 'Won', prize: `₹ ${wAmt}`, 
+                processedBy: res.id, payoutDate: serverTimestamp() 
               });
             } else {
-              batch.update(ticketRef, { status: 'Closed', prize: '₹ 0' });
+              batch.update(ticketRef, { status: 'Closed', prize: '₹ 0', processedBy: res.id });
             }
             anyChanges = true;
-          } catch (err) {
-            console.error("Critical ticket audit error:", err, ticket);
-          }
+          } catch (err) { console.error("Sync error:", err); }
         });
 
-        if (winInThisResult > 0) {
-          const userRef = doc(db, 'users', String(user.uid));
-          batch.update(userRef, { balance: increment(winInThisResult) });
+        if (balanceAdj !== 0) {
+          batch.update(doc(db, 'users', user.uid), { balance: increment(balanceAdj) });
           addNotification({ 
             userId: user.uid, 
-            title: '🏆 WINNER!', 
-            message: `Result for ${resDraw} out! ₹ ${winInThisResult} won!`, 
-            type: 'win' 
+            title: balanceAdj > 0 ? '🏆 RESULT UPDATED!' : '⚠️ BALANCE ADJUSTED', 
+            message: `Draw for ${resDraw} was corrected. Balance adjusted.`, 
+            type: 'info' 
           });
         }
 
         if (anyChanges) {
-          try {
-            await batch.commit();
-            console.log(`✅ Success for Draw: ${resDraw}`);
-            localStorage.setItem(`diamond_processed_${user.uid}_${res.id}`, 'true');
-          } catch (e) {
-            console.error(`❌ Commit failed for result ${res.id}`, e);
-          }
+          try { await batch.commit(); console.log(`✅ Corrected Draw: ${resDraw}`); }
+          catch (e) { console.error(`❌ Sync failed`, e); }
         }
       }
     };
