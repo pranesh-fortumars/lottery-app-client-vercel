@@ -122,38 +122,45 @@ const MyTickets = () => {
                              <th className="px-5 py-3 text-[9px] font-black uppercase text-gray-400 tracking-widest">Item / No</th>
                              <th className="px-3 py-3 text-[9px] font-black uppercase text-gray-400 tracking-widest text-center">Qty</th>
                              <th className="px-3 py-3 text-[9px] font-black uppercase text-gray-400 tracking-widest text-center">Rate</th>
-                             <th className="px-5 py-3 text-[9px] font-black uppercase text-gray-400 tracking-widest text-right">Amount</th>
-                          </tr>
-                       </thead>
-                       <tbody>
-                          {group.tickets.map((t, tIdx) => (
-                            <tr key={tIdx} className="border-b border-gray-50 last:border-0 group hover:bg-red-50/30 transition-colors">
-                               <td className="px-5 py-4">
-                                  <div className="flex flex-col">
-                                     <span className="text-[10px] font-black text-red-600 uppercase italic tracking-tighter">
-                                        {t.type === '1D' ? `${t.pos} (1D)` : t.type === '3D' ? `3D RS ${t.price} ${t.pos}` : `${t.pos} (${t.type})`}
-                                     </span>
-                                     <span className="text-lg font-black font-condensed tracking-widest text-gray-900 mt-0.5">{t.num}</span>
-                                  </div>
-                               </td>
-                               <td className="px-3 py-4 text-center font-black text-gray-700 text-sm">{t.qty}</td>
-                               <td className="px-3 py-4 text-center text-[10px] whitespace-nowrap">
-                                  <span className="text-gray-300 font-bold mr-1">x</span>
-                                  <span className="font-black text-gray-900">₹ {t.price}</span>
-                                </td>
-                               <td className="px-5 py-4 text-right">
-                                  <div className="flex flex-col items-end">
-                                     <span className="text-sm font-black text-gray-900">₹ {(t.qty * t.price).toLocaleString()}</span>
-                                     <span className={`text-[7px] font-black uppercase px-2 py-0.5 rounded-full mt-1 ${
-                                        t.status === 'Won' ? 'bg-emerald-500 text-white' : 
-                                        t.status === 'Active' ? 'bg-blue-500 text-white' : 
-                                        'bg-gray-400 text-white'
-                                     }`}>{t.status}</span>
-                                  </div>
-                               </td>
+                               <th className="px-5 py-3 text-[9px] font-black uppercase text-gray-400 tracking-widest text-right whitespace-nowrap">Amount / Prize</th>
                             </tr>
-                          ))}
-                       </tbody>
+                         </thead>
+                         <tbody>
+                            {group.tickets.map((t, tIdx) => (
+                              <tr key={tIdx} className={`border-b border-gray-50 last:border-0 group transition-colors ${t.status === 'Won' ? 'bg-amber-50/50 hover:bg-amber-100/50' : 'hover:bg-red-50/30'}`}>
+                                 <td className="px-5 py-4">
+                                    <div className="flex flex-col">
+                                       <span className={`text-[10px] font-black uppercase italic tracking-tighter ${t.status === 'Won' ? 'text-amber-600' : 'text-red-600'}`}>
+                                          {t.type === '1D' ? `${t.pos} (1D)` : t.type === '3D' ? `3D RS ${t.price} ${t.pos}` : `${t.pos} (${t.type})`}
+                                       </span>
+                                       <span className="text-lg font-black font-condensed tracking-widest text-gray-900 mt-0.5">{t.num}</span>
+                                    </div>
+                                 </td>
+                                 <td className="px-3 py-4 text-center font-black text-gray-700 text-sm">{t.qty}</td>
+                                 <td className="px-3 py-4 text-center text-[10px] whitespace-nowrap">
+                                    <span className="text-gray-300 font-bold mr-1">x</span>
+                                    <span className="font-black text-gray-900">₹ {t.price}</span>
+                                  </td>
+                                 <td className="px-5 py-4 text-right">
+                                    <div className="flex flex-col items-end">
+                                       <span className="text-sm font-black text-gray-900 leading-none">₹ {(t.qty * t.price).toLocaleString()}</span>
+                                       
+                                       {t.status === 'Won' ? (
+                                         <div className="mt-1 flex flex-col items-end">
+                                           <span className="text-[12px] font-black text-amber-600 font-condensed italic leading-none">{t.prize || "WON"}</span>
+                                           <span className="text-[7px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500 text-white mt-1">Winner</span>
+                                         </div>
+                                       ) : (
+                                         <span className={`text-[7px] font-black uppercase px-2 py-0.5 rounded-full mt-1 ${
+                                            t.status === 'Active' ? 'bg-blue-500 text-white' : 
+                                            'bg-gray-400 text-white'
+                                         }`}>{t.status}</span>
+                                       )}
+                                    </div>
+                                 </td>
+                              </tr>
+                            ))}
+                         </tbody>
                        {/* --- Table Footer Match to Image --- */}
                        <tfoot>
                           <tr className="bg-gray-900 text-white border-t-4 border-red-600">
