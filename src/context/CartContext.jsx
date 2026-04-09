@@ -11,7 +11,8 @@ import {
   orderBy, 
   serverTimestamp,
   getDocs,
-  writeBatch
+  writeBatch,
+  increment
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -33,8 +34,6 @@ export const CartProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const lastProcessedResultId = useRef(localStorage.getItem('diamond_last_processed_id'));
-
   // --- Subscriptions ---
   useEffect(() => {
     if (!user) {
@@ -44,28 +43,20 @@ export const CartProvider = ({ children }) => {
       return;
     }
 
-    // Subscribe to Tickets - Use simple query to avoid index errors, sort on client
-    const ticketsQuery = user.role === 'admin' 
-      ? collection(db, 'tickets')
-      : query(collection(db, 'tickets'), where('userId', '==', user.uid));
-
-    const unsubscribeTickets = onSnapshot(ticketsQuery, (snapshot) => {
-      const tickets = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      // Sort on client side to avoid needing composite indexes in Firestore
-      // Handle null timestamps for newly created tickets (serverTimestamp() is null locally initially)
-      const sortedTickets = [...tickets].sort((a, b) => {
+    // Combined Subscription for Tickets and Notifications to avoid multiple listeners
+    const unsubscribeTickets = onSnapshot(collection(db, 'tickets'), (snapshot) => {
+      const allTickets = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+      const userTickets = allTickets.filter(t => t.userId === user.uid);
+      const sortedTickets = [...userTickets].sort((a, b) => {
         const timeA = a.timestamp?.toMillis ? a.timestamp.toMillis() : Date.now();
         const timeB = b.timestamp?.toMillis ? b.timestamp.toMillis() : Date.now();
         return timeB - timeA;
       });
       setPurchasedTickets(sortedTickets);
-    }, (error) => {
-      console.error("Tickets subscription error:", error);
     });
 
-    // Subscribe to Results - Sort client-side
     const unsubscribeResults = onSnapshot(collection(db, 'results'), (snapshot) => {
-      const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const results = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
       const sortedResults = results.sort((a, b) => {
         const timeA = a.timestamp?.toMillis ? a.timestamp.toMillis() : Date.now();
         const timeB = b.timestamp?.toMillis ? b.timestamp.toMillis() : Date.now();
@@ -74,11 +65,10 @@ export const CartProvider = ({ children }) => {
       setDeclaredResults(sortedResults);
     });
 
-    // Subscribe to Notifications - Sort client-side
-    const notificationsQuery = query(collection(db, 'notifications'), where('userId', '==', user.uid));
-    const unsubscribeNotifs = onSnapshot(notificationsQuery, (snapshot) => {
-      const notifs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      const sortedNotifs = notifs.sort((a, b) => {
+    const unsubscribeNotifs = onSnapshot(collection(db, 'notifications'), (snapshot) => {
+      const allNotifs = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+      const userNotifs = allNotifs.filter(n => n.userId === user.uid);
+      const sortedNotifs = userNotifs.sort((a, b) => {
         const timeA = a.timestamp?.toMillis ? a.timestamp.toMillis() : Date.now();
         const timeB = b.timestamp?.toMillis ? b.timestamp.toMillis() : Date.now();
         return timeB - timeA;
@@ -102,72 +92,101 @@ export const CartProvider = ({ children }) => {
   useEffect(() => {
     if (!declaredResults || declaredResults.length === 0 || !user) return;
     
+    // 📣 1. BROADCAST LATEST ANNOUNCEMENT
     const latestResult = declaredResults[0];
+    if (latestResult.digits && latestResult.number) {
+      setLastAnnouncement({
+        message: `RESULT DECLARED: ${latestResult.brand} (${latestResult.draw})`,
+        ticker: `WINNING NUMBER FOR ${latestResult.draw}: ${latestResult.number}`,
+        draw: latestResult.draw,
+        number: latestResult.number
+      });
+    }
 
-    // 📣 GLOBAL ANNOUNCEMENT (Visible to Admin & User)
-    setLastAnnouncement({
-      message: `RESULT DECLARED: ${latestResult.brand} (${latestResult.draw})`,
-      ticker: `WINNING NUMBER FOR ${latestResult.draw}: ${latestResult.number}`,
-      draw: latestResult.draw,
-      number: latestResult.number
-    });
-    // Clear after 45 seconds to ensure visibility
-    const timer = setTimeout(() => setLastAnnouncement(null), 45000);
+    // 💰 2. SCAN & PROCESS UNPROCESSED PAYOUTS
+    const processAudit = async () => {
+      if (!user?.uid || declaredResults.length === 0 || purchasedTickets.length === 0) return;
 
-    // 💰 PAYOUT LOGIC (User Only)
-    if (user.role === 'user' && latestResult.id !== lastProcessedResultId.current) {
-      const runPayout = async () => {
-        const { digits, prizes, draw } = latestResult;
+      const currentResults = [...declaredResults];
+      const activeUserTickets = purchasedTickets.filter(t => t && t.userId === user.uid && t.status === 'Active');
+
+      if (activeUserTickets.length === 0) return;
+
+      console.log(`[AUDIT] Scanning ${activeUserTickets.length} active tickets.`);
+
+      for (const res of currentResults) {
+        if (!res?.id || !res?.digits) continue;
+        
+        const resDraw = String(res.draw || "").trim();
+        const resultTickets = activeUserTickets.filter(t => String(t.draw || "").trim() === resDraw);
+
+        if (resultTickets.length === 0) continue;
+
         const winningCombos = {
-          '1D_A': digits.A, '1D_B': digits.B, '1D_C': digits.C,
-          '2D_AB': `${digits.A}${digits.B}`, '2D_BC': `${digits.B}${digits.C}`, '2D_AC': `${digits.A}${digits.C}`,
-          '3D_ABC': `${digits.A}${digits.B}${digits.C}`,
-          '4D_XABC': `${digits.X}${digits.A}${digits.B}${digits.C}`
+          '1D_A': String(res.digits.A || ''), '1D_B': String(res.digits.B || ''), '1D_C': String(res.digits.C || ''),
+          '2D_AB': `${res.digits.A || ''}${res.digits.B || ''}`, 
+          '2D_BC': `${res.digits.B || ''}${res.digits.C || ''}`, 
+          '2D_AC': `${res.digits.A || ''}${res.digits.C || ''}`,
+          '3D_ABC': `${res.digits.A || ''}${res.digits.B || ''}${res.digits.C || ''}`,
+          '4D_XABC': `${res.digits.X || ''}${res.digits.A || ''}${res.digits.B || ''}${res.digits.C || ''}`
         };
 
-        // Matching precisely by draw slot
-        const userTickets = ticketsRef.current.filter(t => t.draw === draw && t.status === 'Active' && t.userId === user.uid);
-        if (userTickets.length === 0) {
-          lastProcessedResultId.current = latestResult.id;
-          localStorage.setItem('diamond_last_processed_id', latestResult.id);
-          return;
-        }
-
         const batch = writeBatch(db);
-        let totalWin = 0;
+        let winInThisResult = 0;
+        let anyChanges = false;
 
-        userTickets.forEach(ticket => {
-          const ticketRef = doc(db, 'tickets', ticket.id);
-          const prizeId = ticket.type === '1D' || ticket.type.includes('2D') ? `${ticket.type}_${ticket.pos}` : `${ticket.type}_${Object.keys(prizes[ticket.type])[0]}`;
-          
-          if (ticket.num === winningCombos[prizeId]) {
-            const base = ticket.type === '1D' ? prizes['1D'][ticket.pos] : ticket.type.includes('2D') ? prizes['2D'][ticket.pos] : ticket.type === '3D' ? prizes['3D'].ABC : prizes['4D'].XABC;
-            const won = parseFloat(base) * ticket.qty;
-            totalWin += won;
-            batch.update(ticketRef, { status: 'Won', prize: `₹ ${won.toLocaleString()}` });
-          } else {
-            batch.update(ticketRef, { status: 'Closed', prize: '₹ 0' });
+        resultTickets.forEach(ticket => {
+          if (!ticket.id) return;
+          try {
+            const lookupKey = `${ticket.type}_${ticket.pos}`;
+            const targetNum = String(winningCombos[lookupKey] || '');
+            const isWinner = String(ticket.num || '') === targetNum;
+            
+            console.log(`[CHECK] Draw ${resDraw} | Ticket ${ticket.num} vs ${targetNum} -> ${isWinner ? 'WON' : 'LOSE'}`);
+
+            const ticketRef = doc(db, 'tickets', String(ticket.id));
+            if (isWinner) {
+              const baseP = res.prizes?.[ticket.type]?.[ticket.pos] || 0;
+              const wAmt = Number(baseP) * Number(ticket.qty || 1);
+              winInThisResult += wAmt;
+              batch.update(ticketRef, { 
+                status: 'Won', 
+                prize: `₹ ${wAmt}`,
+                payoutDate: serverTimestamp() 
+              });
+            } else {
+              batch.update(ticketRef, { status: 'Closed', prize: '₹ 0' });
+            }
+            anyChanges = true;
+          } catch (err) {
+            console.error("Critical ticket audit error:", err, ticket);
           }
         });
 
-        if (totalWin > 0) {
-          batch.update(doc(db, 'users', user.uid), { balance: user.balance + totalWin });
-          addNotification({ userId: user.uid, title: '🏆 JACKPOT WINNER!', message: `You won ₹ ${totalWin.toLocaleString()} in the ${draw} draw!`, type: 'win' });
-        } else {
-          addNotification({ userId: user.uid, title: 'Draw Finished 📑', message: `${draw} results are out. Better luck next time!`, type: 'info' });
+        if (winInThisResult > 0) {
+          const userRef = doc(db, 'users', String(user.uid));
+          batch.update(userRef, { balance: increment(winInThisResult) });
+          addNotification({ 
+            userId: user.uid, 
+            title: '🏆 WINNER!', 
+            message: `Result for ${resDraw} out! ₹ ${winInThisResult} won!`, 
+            type: 'win' 
+          });
         }
 
-        try {
-          await batch.commit();
-          lastProcessedResultId.current = latestResult.id;
-          localStorage.setItem('diamond_last_processed_id', latestResult.id);
-        } catch (e) { console.error("Sync error:", e); }
-      };
-      runPayout();
-    }
-
-    return () => clearTimeout(timer);
-  }, [declaredResults, user]);
+        if (anyChanges) {
+          try {
+            await batch.commit();
+            console.log(`✅ Success for Draw: ${resDraw}`);
+            localStorage.setItem(`diamond_processed_${user.uid}_${res.id}`, 'true');
+          } catch (e) {
+            console.error(`❌ Commit failed for result ${res.id}`, e);
+          }
+        }
+      }
+    };
+    processAudit();
+  }, [declaredResults, purchasedTickets, user]);
 
   const addToCart = (entry) => setCart((prev) => [...prev, { ...entry, id: Date.now() }]);
   const removeFromCart = (id) => setCart((prev) => prev.filter((item) => item.id !== id));
@@ -207,7 +226,7 @@ export const CartProvider = ({ children }) => {
 
       // Deduct balance
       const userRef = doc(db, 'users', user.uid);
-      batch.update(userRef, { balance: user.balance - totalCost });
+      batch.update(userRef, { balance: increment(-totalCost) });
 
       await batch.commit();
       clearCart();
@@ -243,9 +262,20 @@ export const CartProvider = ({ children }) => {
   };
 
   const addResult = async (data) => {
-    const fullNum = `${data.digits.X}${data.digits.A}${data.digits.B}${data.digits.C}`;
+    const { X, A, B, C } = data.digits;
+    const fullNum = `${X}${A}${B}${C}`;
+    
+    // Explicitly normalize everything to strings for the DB
+    const normalizedDigits = {
+      X: String(X),
+      A: String(A),
+      B: String(B),
+      C: String(C)
+    };
+
     await addDoc(collection(db, 'results'), {
       ...data,
+      digits: normalizedDigits,
       number: fullNum,
       timestamp: serverTimestamp()
     });

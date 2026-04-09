@@ -49,11 +49,12 @@ const ResultsPage = () => {
                     <td className="p-3 border-r border-red-600 font-black text-[9px] uppercase tracking-widest bg-red-600 text-white">Winning Digits</td>
                     <td className="p-3">
                       <div className="flex gap-2.5">
-                        {r.number.split('').map((n, j) => (
+                        {(r.number || "").split('').map((n, j) => (
                           <div key={j} className="w-10 h-10 bg-gray-900 border-b-4 border-red-600 rounded-xl flex items-center justify-center text-white font-black text-xl italic shadow-md">
                             {n}
                           </div>
                         ))}
+                        {!r.number && <span className="text-[10px] font-black text-gray-400 italic">Processing...</span>}
                       </div>
                     </td>
                   </tr>

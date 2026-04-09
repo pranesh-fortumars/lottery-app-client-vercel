@@ -89,7 +89,7 @@ const AdminAnnouncements = () => {
     const slots = Object.values(drawAssignments).flat();
     
     slots.forEach(s => {
-      const tickets = purchasedTickets.filter(t => t.title.includes(s));
+      const tickets = purchasedTickets.filter(t => t.draw === s);
       
       const combinationTable = {
         '1D': { A: 0, B: 0, C: 0 },
@@ -100,7 +100,7 @@ const AdminAnnouncements = () => {
 
       tickets.forEach(t => {
          if (t.type === '1D' && combinationTable['1D']) combinationTable['1D'][t.pos] += t.qty;
-         else if (t.type.includes('2D') && combinationTable['2D']) combinationTable['2D'][t.pos] += t.qty;
+         else if (t.type === '2D' && combinationTable['2D']) combinationTable['2D'][t.pos] += t.qty;
          else if (t.type === '3D') combinationTable['3D'].ABC += t.qty;
          else if (t.type === '4D') combinationTable['4D'].XABC += t.qty;
       });
@@ -141,10 +141,7 @@ const AdminAnnouncements = () => {
     const { X, A, B, C } = resultDigits;
     const today = new Date().toLocaleDateString();
     
-    if (!X || !A || !B || !C) return alert("Please enter all result digits.");
-    
-    const already = declaredResults.find(r => r.draw === selectedSlot && r.date === today);
-    if (already) return alert("Error: Result already announced for this slot today.");
+    if (X === '' || A === '' || B === '' || C === '') return alert("Please enter all result digits.");
     
     addResult({ 
       draw: selectedSlot, 

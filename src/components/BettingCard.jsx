@@ -112,7 +112,7 @@ const BettingCard = ({ title, winText: initialWinText, price: initialPrice, digi
       num: row.numbers.join(''),
       qty: row.qty,
       price: parseFloat(currentPrice),
-      type: title === "Single Digit" ? "1D" : title === "Double Digits" ? "2D (DOUBLE)" : title === "Three Digits" ? "3D" : "4D",
+      type: title === "Single Digit" ? "1D" : title === "Double Digits" ? "2D" : title === "Three Digits" ? "3D" : "4D",
       draw: drawTime,
       pos: boardLabel,
       board: boardLabel
