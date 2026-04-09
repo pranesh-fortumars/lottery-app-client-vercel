@@ -46,8 +46,12 @@ export const CartProvider = ({ children }) => {
     // Combined Subscription for Tickets and Notifications to avoid multiple listeners
     const unsubscribeTickets = onSnapshot(collection(db, 'tickets'), (snapshot) => {
       const allTickets = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-      const userTickets = allTickets.filter(t => t.userId === user.uid);
-      const sortedTickets = [...userTickets].sort((a, b) => {
+      // Admin sees everything; User sees only their own
+      const visibleTickets = user.role === 'admin' 
+        ? allTickets 
+        : allTickets.filter(t => t.userId === user.uid);
+        
+      const sortedTickets = [...visibleTickets].sort((a, b) => {
         const timeA = a.timestamp?.toMillis ? a.timestamp.toMillis() : Date.now();
         const timeB = b.timestamp?.toMillis ? b.timestamp.toMillis() : Date.now();
         return timeB - timeA;
@@ -67,8 +71,12 @@ export const CartProvider = ({ children }) => {
 
     const unsubscribeNotifs = onSnapshot(collection(db, 'notifications'), (snapshot) => {
       const allNotifs = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-      const userNotifs = allNotifs.filter(n => n.userId === user.uid);
-      const sortedNotifs = userNotifs.sort((a, b) => {
+      // Admin sees everything; User sees only their own
+      const visibleNotifs = user.role === 'admin'
+        ? allNotifs
+        : allNotifs.filter(n => n.userId === user.uid);
+
+      const sortedNotifs = visibleNotifs.sort((a, b) => {
         const timeA = a.timestamp?.toMillis ? a.timestamp.toMillis() : Date.now();
         const timeB = b.timestamp?.toMillis ? b.timestamp.toMillis() : Date.now();
         return timeB - timeA;
