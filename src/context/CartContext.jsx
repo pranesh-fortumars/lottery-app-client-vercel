@@ -115,12 +115,20 @@ export const CartProvider = ({ children }) => {
     const processAudit = async () => {
       if (!user?.uid || declaredResults.length === 0 || purchasedTickets.length === 0) return;
 
-      const currentResults = [...declaredResults];
+      // Ensure we only process the LATEST declaration for each unique draw slot
+      const latestResultsBySlot = {};
+      [...declaredResults].forEach(res => {
+        const slot = String(res.draw || "").trim();
+        if (!latestResultsBySlot[slot]) {
+          latestResultsBySlot[slot] = res;
+        }
+      });
+      const currentResults = Object.values(latestResultsBySlot);
+      
       const activeUserTickets = purchasedTickets.filter(t => t && t.userId === user.uid && t.status === 'Active');
-
       if (activeUserTickets.length === 0) return;
 
-      console.log(`[AUDIT] Scanning ${activeUserTickets.length} active tickets.`);
+      console.log(`[AUDIT] Scanning ${activeUserTickets.length} active tickets against ${currentResults.length} unique slots.`);
 
       for (const res of currentResults) {
         if (!res?.id || !res?.digits) continue;
