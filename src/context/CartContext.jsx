@@ -1,5 +1,18 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from './AuthContext';
+import { 
+  collection, 
+  addDoc, 
+  onSnapshot, 
+  query, 
+  where, 
+  orderBy, 
+  serverTimestamp,
+  updateDoc,
+  doc,
+  writeBatch
+} from 'firebase/firestore';
+import { db } from '../firebase';
 
 const CartContext = createContext();
 
@@ -13,37 +26,78 @@ export const useCart = () => {
 
 export const CartProvider = ({ children }) => {
   const { user, updateBalance } = useAuth();
+  const [cart, setCart] = useState([]);
+  const [purchasedTickets, setPurchasedTickets] = useState([]);
+  const [declaredResults, setDeclaredResults] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const lastProcessedResultId = useRef(null);
+
+  // --- 🔥 FIREBASE SUBSCRIPTIONS 🔥 ---
   
-  const load = (key, defaultVal) => {
-    const saved = localStorage.getItem(key);
-    return saved ? JSON.parse(saved) : defaultVal;
-  };
-
-  const [cart, setCart] = useState(() => load('diamond_cart', []));
-  const [purchasedTickets, setPurchasedTickets] = useState(() => load('diamond_purchased_tickets', []));
-  const [declaredResults, setDeclaredResults] = useState(() => load('diamond_results', []));
-  const [notifications, setNotifications] = useState(() => load('diamond_notifications', [
-    { id: 1, title: 'Welcome!', message: 'Start your lottery journey today.', time: 'Just now', read: false, type: 'info' }
-  ]));
-
-  const lastProcessedResultId = useRef(load('diamond_last_processed_id', null));
-
-  useEffect(() => { localStorage.setItem('diamond_cart', JSON.stringify(cart)); }, [cart]);
-  useEffect(() => { localStorage.setItem('diamond_purchased_tickets', JSON.stringify(purchasedTickets)); }, [purchasedTickets]);
-  useEffect(() => { localStorage.setItem('diamond_results', JSON.stringify(declaredResults)); }, [declaredResults]);
-  useEffect(() => { localStorage.setItem('diamond_notifications', JSON.stringify(notifications)); }, [notifications]);
-  useEffect(() => { localStorage.setItem('diamond_last_processed_id', JSON.stringify(lastProcessedResultId.current)); }, [declaredResults]);
-
-  // --- 🛰️ THE REVOLUTIONARY SYNC ENGINE (Multi-Port Winner Logic) 🛰️ ---
-  const processDrawResults = useCallback((results) => {
-    if (!results || results.length === 0) return;
+  // 1. Subscribe to Tickets (Admin Sees All, User Sees Own)
+  useEffect(() => {
+    if (!user) {
+      setPurchasedTickets([]);
+      return;
+    }
     
-    const latestResult = results[0]; // Assuming newest is first
-    if (latestResult.id === lastProcessedResultId.current) return; // Already paid
+    let q;
+    if (user.role === 'admin') {
+      q = query(collection(db, 'tickets'), orderBy('createdAt', 'desc'));
+    } else {
+      q = query(
+        collection(db, 'tickets'), 
+        where('userId', '==', user.uid),
+        orderBy('createdAt', 'desc')
+      );
+    }
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setPurchasedTickets(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+
+  // 2. Subscribe to Global Results
+  useEffect(() => {
+    const q = query(collection(db, 'results'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setDeclaredResults(results);
+      if (user && results.length > 0) processDrawResults(results);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  // 3. Subscribe to Notifications
+  useEffect(() => {
+    if (!user) {
+      setNotifications([]);
+      return;
+    }
+    const q = query(
+      collection(db, 'notifications'), 
+      where('userId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setNotifications(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  // --- 🛰️ THE REVOLUTIONARY SYNC ENGINE 🛰️ ---
+  const processDrawResults = useCallback(async (results) => {
+    if (!results || results.length === 0 || !user) return;
+    
+    // Get results that haven't been processed yet locally
+    const latestResult = results[0];
+    if (latestResult.id === lastProcessedResultId.current) return;
 
     const { digits, prizes, draw, brand } = latestResult;
-    let userWon = false;
     let totalWinAmount = 0;
+    let winningTicketsFound = [];
 
     const combinations = {
       '1D_A': digits.A, '1D_B': digits.B, '1D_C': digits.C,
@@ -52,9 +106,10 @@ export const CartProvider = ({ children }) => {
       '4D_XABC': `${digits.X}${digits.A}${digits.B}${digits.C}`
     };
 
-    const updatedTickets = purchasedTickets.map(ticket => {
-      // Only process tickets for THIS draw that are still 'Active'
-      if (!ticket.title.includes(draw) || ticket.status !== 'Active') return ticket;
+    const batch = writeBatch(db);
+
+    purchasedTickets.forEach(ticket => {
+      if (!ticket.title.includes(draw) || ticket.status !== 'Active') return;
 
       let isWinner = false;
       let wonPrize = 0;
@@ -70,88 +125,108 @@ export const CartProvider = ({ children }) => {
         if (tNum === combinations['4D_XABC']) { isWinner = true; wonPrize = parseFloat(prizes['4D'].XABC); }
       }
 
+      const ticketRef = doc(db, 'tickets', ticket.id);
       if (isWinner) {
         const payout = wonPrize * ticket.qty;
-        userWon = true;
         totalWinAmount += payout;
-        return { ...ticket, status: 'Won', prize: `₹ ${payout.toLocaleString()}` };
+        winningTicketsFound.push(ticket);
+        batch.update(ticketRef, { status: 'Won', prize: `₹ ${payout.toLocaleString()}` });
+      } else {
+        batch.update(ticketRef, { status: 'Closed' });
       }
-      return { ...ticket, status: 'Closed' };
     });
 
-    if (userWon) {
-       updateBalance(totalWinAmount);
+    if (totalWinAmount > 0) {
+       await updateBalance(totalWinAmount);
        addNotification({
          title: '🏆 YOU WON!',
          message: `Draw Result: ${latestResult.number}. You earned ₹ ${totalWinAmount.toLocaleString()}!`,
          type: 'win'
        });
-    } else {
-       addNotification({
-         title: 'Draw Result Out',
-         message: `${brand} ${draw}: ${latestResult.number}. Better luck next time!`,
-         type: 'result'
-       });
+       await batch.commit();
+    } else if (winningTicketsFound.length === 0 && purchasedTickets.some(t => t.title.includes(draw) && t.status === 'Active')) {
+        // Only notify if user had active tickets in this draw
+        addNotification({
+          title: 'Draw Result Out',
+          message: `${brand} ${draw}: ${latestResult.number}. Better luck next time!`,
+          type: 'result'
+        });
+        await batch.commit();
     }
 
-    setPurchasedTickets(updatedTickets);
     lastProcessedResultId.current = latestResult.id;
-  }, [purchasedTickets, updateBalance]);
-
-  // --- CROSS-TAB LISTENER ---
-  useEffect(() => {
-    const handleStorage = (e) => {
-      if (e.key === 'diamond_results') {
-        const results = JSON.parse(e.newValue);
-        setDeclaredResults(results);
-        processDrawResults(results); // Trigger win logic on the USER tab
-      }
-      if (e.key === 'diamond_purchased_tickets') setPurchasedTickets(JSON.parse(e.newValue));
-      if (e.key === 'diamond_notifications') setNotifications(JSON.parse(e.newValue));
-    };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, [processDrawResults]);
+  }, [purchasedTickets, user, updateBalance]);
 
   const addToCart = (entry) => setCart((prev) => [...prev, { ...entry, id: Date.now() }]);
   const removeFromCart = (id) => setCart((prev) => prev.filter((item) => item.id !== id));
   const clearCart = () => setCart([]);
 
-  const confirmPurchase = () => {
-    if (cart.length === 0) return;
+  const confirmPurchase = async () => {
+    if (cart.length === 0 || !user) return;
     const txId = `TX${Math.floor(100000 + Math.random() * 900000)}`;
     const now = new Date();
-    const newPurchases = cart.map(item => ({
-      ...item,
-      purchaseId: txId,
-      purchaseDate: now.toLocaleDateString(),
-      purchaseTime: now.toLocaleTimeString(),
-      status: 'Active',
-      prize: '-'
-    }));
-    setPurchasedTickets((prev) => [...newPurchases, ...prev]);
-    clearCart();
-    addNotification({ title: 'Confirmation', message: `Receipt ${txId} generated successfully.`, type: 'success' });
-  };
-
-  const addNotification = (notif) => {
-    const n = { ...notif, id: Date.now(), time: 'Just now', read: false };
-    setNotifications(prev => [n, ...prev]);
-  };
-
-  const markAllRead = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-
-  const addResult = (data) => {
-    const fullNum = `${data.digits.X}${data.digits.A}${data.digits.B}${data.digits.C}`;
-    const entry = { ...data, id: Date.now(), date: new Date().toLocaleDateString(), number: fullNum };
     
-    // 1. Update Global State (which will trigger 'storage' events for other tabs)
-    setDeclaredResults(prev => {
-       const newList = [entry, ...prev];
-       // 2. We ALSO process it in the CURRENT tab (Admin tab) in case they have a combined view
-       processDrawResults(newList); 
-       return newList;
+    try {
+      for (const item of cart) {
+        await addDoc(collection(db, 'tickets'), {
+          ...item,
+          userId: user.uid,
+          purchaseId: txId,
+          purchaseDate: now.toLocaleDateString(),
+          purchaseTime: now.toLocaleTimeString(),
+          status: 'Active',
+          prize: '-',
+          createdAt: serverTimestamp()
+        });
+      }
+      clearCart();
+      addNotification({ title: 'Confirmation', message: `Receipt ${txId} generated successfully.`, type: 'success' });
+    } catch (error) {
+      console.error("Purchase error:", error);
+    }
+  };
+
+  const addNotification = async (notif) => {
+    if (!user) return;
+    try {
+      await addDoc(collection(db, 'notifications'), {
+        ...notif,
+        userId: user.uid,
+        time: 'Just now',
+        read: false,
+        createdAt: serverTimestamp()
+      });
+    } catch (error) {
+      console.error("Add notification error:", error);
+    }
+  };
+
+  const markAllRead = async () => {
+    if (!user) return;
+    const batch = writeBatch(db);
+    notifications.forEach(n => {
+      if (!n.read) {
+        const nRef = doc(db, 'notifications', n.id);
+        batch.update(nRef, { read: true });
+      }
     });
+    await batch.commit();
+  };
+
+  const addResult = async (data) => {
+    const fullNum = `${data.digits.X}${data.digits.A}${data.digits.B}${data.digits.C}`;
+    const entry = { 
+      ...data, 
+      date: new Date().toLocaleDateString(), 
+      number: fullNum,
+      createdAt: serverTimestamp() 
+    };
+    
+    try {
+      await addDoc(collection(db, 'results'), entry);
+    } catch (error) {
+      console.error("Add result error:", error);
+    }
   };
 
   const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
@@ -166,3 +241,4 @@ export const CartProvider = ({ children }) => {
     </CartContext.Provider>
   );
 };
+

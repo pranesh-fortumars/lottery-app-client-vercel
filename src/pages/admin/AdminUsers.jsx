@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -11,53 +11,69 @@ import {
   Wallet,
   CheckCircle2,
   ChevronRight,
-  ShieldCheck
+  ShieldCheck,
+  Loader2
 } from 'lucide-react';
+import { streamUsers } from '../../services/firebaseService';
+import { useAuth } from '../../context/AuthContext';
 
 const AdminUsers = () => {
   const navigate = useNavigate();
+  const { signup } = useAuth(); // Use signup for registering new players via Firebase Auth
   const [showAddForm, setShowAddForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   
-  const [users, setUsers] = useState([
-    { id: '101', name: 'Rajesh Kumar', email: 'rajesh@example.com', phone: '+91 98765 43210', balance: 14500, status: 'Active', joined: 'Mar 10, 2024' },
-    { id: '102', name: 'Amit Singh', email: 'amit@example.com', phone: '+91 87654 32109', balance: 2100, status: 'Active', joined: 'Mar 12, 2024' },
-    { id: '103', name: 'Suresh Patil', email: 'suresh@example.com', phone: '+91 76543 21098', balance: 0, status: 'Restricted', joined: 'Mar 14, 2024' },
-    { id: '104', name: 'Vijay Varma', email: 'vijay@example.com', phone: '+91 65432 10987', balance: 42800, status: 'Active', joined: 'Mar 15, 2024' },
-  ]);
-
   const [newUser, setNewUser] = useState({
     name: '',
     email: '',
     phone: '',
-    balance: ''
+    balance: '',
+    password: 'password123' // Default password for new registrations
   });
 
-  const handleAddUser = (e) => {
+  useEffect(() => {
+    const unsubscribe = streamUsers((data) => {
+      setUsers(data);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleAddUser = async (e) => {
     e.preventDefault();
     if (!newUser.name || !newUser.phone) return;
 
-    const userToAdd = {
-      id: (Math.floor(Math.random() * 900) + 105).toString(),
-      ...newUser,
+    // Firebase Auth needs an email, so we use our virtual email logic
+    const virtualEmail = newUser.email || `${newUser.phone}@lottery.com`;
+    
+    setLoading(true);
+    const result = await signup(virtualEmail, newUser.password, {
+      name: newUser.name,
+      mobile: newUser.phone,
       balance: newUser.balance ? parseInt(newUser.balance) : 0,
-      status: 'Active',
-      joined: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    };
+      role: 'user'
+    });
+    setLoading(false);
 
-    setUsers([userToAdd, ...users]);
-    setNewUser({ name: '', email: '', phone: '', balance: '' });
-    setShowAddForm(false);
+    if (result.success) {
+      setNewUser({ name: '', email: '', phone: '', balance: '', password: 'password123' });
+      setShowAddForm(false);
+    } else {
+      alert("Error: " + result.message);
+    }
   };
 
   const filteredUsers = users.filter(user => 
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.phone.includes(searchTerm)
+    (user.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (user.mobile?.includes(searchTerm)) ||
+    (user.phone?.includes(searchTerm))
   );
 
   return (
     <div className="space-y-10 p-4 pb-24 relative min-h-screen bg-[#f8f9fa]">
-      {/* Top Banner - Premium Treasure Chest Design */}
+      {/* Top Banner */}
       <div className="border-[1.5px] border-[#ff004d] rounded-[2.5rem] p-6 bg-white shadow-2xl relative overflow-hidden group">
          <div className="absolute top-0 right-0 w-32 h-32 bg-[#ff004d]/5 rounded-full blur-3xl"></div>
          <div className="flex gap-4 items-center">
@@ -93,38 +109,44 @@ const AdminUsers = () => {
       {/* User Cards */}
       <div className="space-y-5">
         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4 mb-2 italic">Active Member List</p>
-        <AnimatePresence>
-          {filteredUsers.map((user) => (
-            <motion.div 
-              layout
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              key={user.id} 
-              onClick={() => navigate(`/admin/users/${user.id}`)}
-              className="bg-white rounded-[2rem] p-5 shadow-lg border border-gray-100 flex items-center justify-between group active:scale-[0.98] transition-all cursor-pointer relative overflow-hidden"
-            >
-               <div className="flex items-center gap-4 relative z-10">
-                  <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center text-[#f42464] font-black text-xl border border-white shadow-sm group-hover:bg-[#f42464] group-hover:text-white transition-all transform group-hover:rotate-6">
-                     {user.name.charAt(0)}
-                  </div>
-                  <div>
-                     <h4 className="font-black text-gray-800 text-sm tracking-tight uppercase italic">{user.name}</h4>
-                     <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-1">{user.phone}</p>
-                  </div>
-               </div>
-               <div className="text-right flex items-center gap-4 relative z-10">
-                  <div className="space-y-1">
-                    <p className="font-black text-emerald-600 text-base italic">₹{user.balance.toLocaleString()}</p>
-                    <div className="flex items-center justify-end gap-1.5">
-                       <span className={`w-1.5 h-1.5 rounded-full ${user.status === 'Active' ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></span>
-                       <span className="text-[7px] font-black uppercase tracking-widest text-gray-400">{user.status}</span>
+        {loading ? (
+          <div className="flex justify-center p-10">
+            <Loader2 className="animate-spin text-[#f42464]" size={32} />
+          </div>
+        ) : (
+          <AnimatePresence>
+            {filteredUsers.map((user) => (
+              <motion.div 
+                layout
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                key={user.id} 
+                onClick={() => navigate(`/admin/users/${user.id}`)}
+                className="bg-white rounded-[2rem] p-5 shadow-lg border border-gray-100 flex items-center justify-between group active:scale-[0.98] transition-all cursor-pointer relative overflow-hidden"
+              >
+                 <div className="flex items-center gap-4 relative z-10">
+                    <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center text-[#f42464] font-black text-xl border border-white shadow-sm group-hover:bg-[#f42464] group-hover:text-white transition-all transform group-hover:rotate-6">
+                       {(user.name || 'U').charAt(0)}
                     </div>
-                  </div>
-                  <ChevronRight size={20} className="text-gray-100 group-hover:text-[#f42464] transition-colors" />
-               </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+                    <div>
+                       <h4 className="font-black text-gray-800 text-sm tracking-tight uppercase italic">{user.name || 'Unknown'}</h4>
+                       <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-1">{user.mobile || user.phone || 'No Mobile'}</p>
+                    </div>
+                 </div>
+                 <div className="text-right flex items-center gap-4 relative z-10">
+                    <div className="space-y-1">
+                      <p className="font-black text-emerald-600 text-base italic">₹{(user.balance || 0).toLocaleString()}</p>
+                      <div className="flex items-center justify-end gap-1.5">
+                         <span className={`w-1.5 h-1.5 rounded-full ${user.status === 'Active' ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></span>
+                         <span className="text-[7px] font-black uppercase tracking-widest text-gray-400">{user.status || 'Active'}</span>
+                      </div>
+                    </div>
+                    <ChevronRight size={20} className="text-gray-100 group-hover:text-[#f42464] transition-colors" />
+                 </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        )}
       </div>
 
       {/* Add User Modal */}
@@ -164,9 +186,10 @@ const AdminUsers = () => {
               <form onSubmit={handleAddUser} className="space-y-5">
                 {[
                   { label: 'Full Name', key: 'name', icon: User, type: 'text', placeholder: 'Legal name of player' },
-                  { label: 'Phone Number', key: 'phone', icon: Phone, type: 'tel', placeholder: '+91 00000 00000' },
+                  { label: 'Phone Number', key: 'phone', icon: Phone, type: 'tel', placeholder: '9100000000' },
                   { label: 'Email (Optional)', key: 'email', icon: Mail, type: 'email', placeholder: 'contact@player.com' },
                   { label: 'Starting Balance', key: 'balance', icon: Wallet, type: 'number', placeholder: '₹ 0.00' },
+                  { label: 'Password', key: 'password', icon: ShieldCheck, type: 'password', placeholder: '••••••••' },
                 ].map((field) => (
                   <div key={field.key} className="space-y-1.5">
                     <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">{field.label}</label>
@@ -186,9 +209,10 @@ const AdminUsers = () => {
 
                 <button 
                   type="submit"
-                  className="w-full h-16 bg-gradient-to-r from-[#f42464] to-[#ff004d] text-white rounded-2xl font-black text-[12px] uppercase tracking-widest shadow-xl shadow-[#f42464]/20 flex items-center justify-center gap-3 mt-6 active:scale-95 transition-all"
+                  disabled={loading}
+                  className="w-full h-16 bg-gradient-to-r from-[#f42464] to-[#ff004d] text-white rounded-2xl font-black text-[12px] uppercase tracking-widest shadow-xl shadow-[#f42464]/20 flex items-center justify-center gap-3 mt-6 active:scale-95 transition-all disabled:opacity-50"
                 >
-                   Finalize Registration <CheckCircle2 size={24} className="text-white/40" />
+                   {loading ? 'Processing...' : 'Finalize Registration'} <CheckCircle2 size={24} className="text-white/40" />
                 </button>
               </form>
             </motion.div>
@@ -200,3 +224,4 @@ const AdminUsers = () => {
 };
 
 export default AdminUsers;
+
