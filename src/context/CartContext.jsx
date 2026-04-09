@@ -113,6 +113,8 @@ export const CartProvider = ({ children }) => {
   const ticketsRef = useRef([]);
   useEffect(() => { ticketsRef.current = purchasedTickets; }, [purchasedTickets]);
 
+  const processingResults = React.useRef(new Set());
+
   // Sync Engine: Triggers Payouts and Announcements when new results arrive
   useEffect(() => {
     if (!declaredResults || declaredResults.length === 0 || !user) return;
@@ -132,16 +134,10 @@ export const CartProvider = ({ children }) => {
     const processAudit = async () => {
       if (!user?.uid || declaredResults.length === 0 || purchasedTickets.length === 0) return;
 
-      const latestResultsBySlot = {};
-      [...declaredResults].forEach(res => {
-        const slotKey = String(res.draw || "").trim();
-        if (!latestResultsBySlot[slotKey]) latestResultsBySlot[slotKey] = res;
-      });
-      const currentResults = Object.values(latestResultsBySlot);
       const userTickets = purchasedTickets.filter(t => t.userId === user.uid);
 
-      for (const res of currentResults) {
-        if (!res?.id || !res?.digits) continue;
+      for (const res of declaredResults) {
+        if (!res?.id || !res?.digits || processingResults.current.has(res.id)) continue;
         
         const resDraw = String(res.draw || "").trim();
         const ticketsToAudit = userTickets.filter(t => 
@@ -149,6 +145,9 @@ export const CartProvider = ({ children }) => {
         );
 
         if (ticketsToAudit.length === 0) continue;
+
+        // Lock this result to prevent duplicate processing in the same lifecycle
+        processingResults.current.add(res.id);
 
         const winningCombos = {
           '1D_A': String(res.digits.A || ''), '1D_B': String(res.digits.B || ''), '1D_C': String(res.digits.C || ''),
@@ -166,8 +165,8 @@ export const CartProvider = ({ children }) => {
         ticketsToAudit.forEach(ticket => {
           if (!ticket.id) return;
           try {
-            // Reverse old win if it exists
-            if (ticket.status === 'Won' && ticket.prize) {
+            // Reverse old win ONLY IF it was from a DIFFERENT result ID
+            if (ticket.status === 'Won' && ticket.prize && ticket.processedBy !== res.id) {
               const oldVal = parseInt(ticket.prize.replace(/[^\d]/g, '')) || 0;
               balanceAdj -= oldVal;
             }
@@ -196,15 +195,23 @@ export const CartProvider = ({ children }) => {
           batch.update(doc(db, 'users', user.uid), { balance: increment(balanceAdj) });
           addNotification({ 
             userId: user.uid, 
-            title: balanceAdj > 0 ? '🏆 RESULT UPDATED!' : '⚠️ BALANCE ADJUSTED', 
-            message: `Draw for ${resDraw} was corrected. Balance adjusted.`, 
+            title: balanceAdj > 0 ? '🏆 WINNER!' : '⚠️ ADJUSTMENT', 
+            message: `Result for ${resDraw} processed. Balance adjusted by ₹ ${balanceAdj}.`, 
             type: 'info' 
           });
         }
 
         if (anyChanges) {
-          try { await batch.commit(); console.log(`✅ Corrected Draw: ${resDraw}`); }
-          catch (e) { console.error(`❌ Sync failed`, e); }
+          try { 
+            await batch.commit(); 
+            console.log(`✅ Audit Complete for: ${resDraw}`); 
+          }
+          catch (e) { 
+            console.error(`❌ Sync failed`, e); 
+            processingResults.current.delete(res.id); // Unlock on failure
+          }
+        } else {
+          processingResults.current.delete(res.id);
         }
       }
     };
