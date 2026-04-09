@@ -26,7 +26,6 @@ import AdminReports from './pages/admin/AdminReports';
 import AdminSettings from './pages/admin/AdminSettings';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { seedInitialData } from './services/firebaseService';
 
 const ProtectedRoute = ({ children, role }) => {
   const { user } = useAuth();
@@ -50,10 +49,6 @@ const LandingPage = () => {
 };
 
 function App() {
-  useEffect(() => {
-    seedInitialData();
-  }, []);
-
   return (
     <AuthProvider>
     <CartProvider>
@@ -102,4 +97,3 @@ function App() {
 }
 
 export default App;
-

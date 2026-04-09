@@ -1,38 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import PageWrapper from '../components/PageWrapper';
-import { ScrollText, Gavel, ShoppingCart, Lock, Info, Loader2 } from 'lucide-react';
+import { ScrollText, Gavel, ShoppingCart, Lock, Info } from 'lucide-react';
 import BettingCard from '../components/BettingCard';
 import { useCart } from '../context/CartContext';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
 
 const SelectionPage = () => {
   const navigate = useNavigate();
   const { gameId } = useParams();
   const { cart } = useCart();
-  const [game, setGame] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchGame = async () => {
-      try {
-        const gameRef = doc(db, 'games', gameId);
-        const gameSnap = await getDoc(gameRef);
-        if (gameSnap.exists()) {
-          setGame(gameSnap.data());
-        }
-      } catch (error) {
-        console.error("Error fetching game:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchGame();
-  }, [gameId]);
   
-  const drawTime = game?.time || '';
-  const isKerala = game?.type === 'kerala'; 
+  const gameTimes = {
+    '1': '01:00 PM',
+    '2': '06:00 PM',
+    '3': '08:00 PM',
+    '4': '03:00 PM'
+  };
+
+  const drawTime = gameTimes[gameId];
+  const isKerala = gameId === '4'; 
   const marketName = isKerala ? 'KERALA' : 'DEAR';
   
   const getGameName = () => `${marketName} LOTTERY`;
@@ -77,7 +63,7 @@ const SelectionPage = () => {
   const footerBtn = (
     <button 
       onClick={() => navigate('/cart')}
-      disabled={closed || loading}
+      disabled={closed}
       className={`w-full text-white py-4 rounded-2xl flex items-center justify-center gap-3 font-black text-xl shadow-[0_15px_30px_-5px_rgba(255,0,85,0.4)] relative active:scale-95 transition-all ${closed ? 'bg-gray-400' : 'bg-[#ff0055]'}`}
     >
       <ShoppingCart size={24} fill="white" /> {closed ? 'Closed' : 'PAY NOW'}
@@ -85,12 +71,6 @@ const SelectionPage = () => {
          <span className="absolute -top-3 -right-3 bg-black text-white w-8 h-8 rounded-full text-[12px] flex items-center justify-center border-[3px] border-white font-black shadow-lg">{cart.length}</span>
       )}
     </button>
-  );
-
-  if (loading) return (
-    <PageWrapper title="Loading..." showNav={true}>
-      <div className="flex justify-center items-center h-screen"><Loader2 className="animate-spin text-red-600" size={48} /></div>
-    </PageWrapper>
   );
 
   return (
@@ -130,6 +110,7 @@ const SelectionPage = () => {
                 winText="₹ 100" 
                 price="11.00" 
                 gameName={getGameName()} 
+                drawTime={drawTime}
                 customRows={[
                 { labels: ['A'], digits: 1 },
                 { labels: ['B'], digits: 1 },
@@ -143,6 +124,7 @@ const SelectionPage = () => {
                 winText="₹ 1000" 
                 price="11.00" 
                 gameName={getGameName()} 
+                drawTime={drawTime}
                 customRows={[
                 { labels: ['A', 'B'], digits: 2 },
                 { labels: ['B', 'C'], digits: 2 },
@@ -155,6 +137,7 @@ const SelectionPage = () => {
                 title="Three Digits" 
                 digits={3} 
                 gameName={getGameName()} 
+                drawTime={drawTime}
                 priceOptions={abcTiers}
             />
 
@@ -163,6 +146,7 @@ const SelectionPage = () => {
                 title="4D XABC" 
                 digits={4} 
                 gameName={getGameName()} 
+                drawTime={drawTime}
                 priceOptions={xabcTiers}
             />
           </div>
@@ -181,4 +165,3 @@ const SelectionPage = () => {
 };
 
 export default SelectionPage;
-

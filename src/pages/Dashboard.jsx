@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Diamond, Loader2 } from 'lucide-react';
-import { streamGames } from '../services/firebaseService';
+import { Mail, Diamond } from 'lucide-react';
 
 const CountdownTimer = ({ drawTime }) => {
   const [timeLeft, setTimeLeft] = useState({ h: '00', m: '00', s: '00' });
@@ -52,23 +51,8 @@ const CountdownTimer = ({ drawTime }) => {
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [games, setGames] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = streamGames((data) => {
-      const processedGames = data.map(game => ({
-        ...game,
-        closed: isClosed(game.time)
-      }));
-      setGames(processedGames);
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
 
   const isClosed = (drawTime) => {
-    if (!drawTime) return true;
     const now = new Date();
     const parts = drawTime.match(/(\d+)[.:](\d+)\s*(AM|PM)/);
     if (!parts) return true;
@@ -88,9 +72,19 @@ const Dashboard = () => {
     return diffInMinutes <= 15;
   };
 
+  const games = [
+    { time: '01:00 PM', name: 'DEAR', type: 'dear' },
+    { time: '06:00 PM', name: 'DEAR', type: 'dear' },
+    { time: '08:00 PM', name: 'DEAR', type: 'dear' },
+    { time: '03:00 PM', name: 'KERALA', type: 'kerala' }
+  ].map(game => ({
+    ...game,
+    closed: isClosed(game.time)
+  }));
+
   return (
     <div className="bg-[#f9f9f9]">
-      {/* Hero Banner Area */}
+      {/* Hero Banner Area - Using newly generated premium banner */}
       <div className="p-4 pt-4">
         <div className="rounded-3xl overflow-hidden shadow-2xl relative border-2 border-white/20">
            <img 
@@ -101,13 +95,13 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Red Promo Bar */}
+      {/* Red Promo Bar - Exactly like Image 1 with text */}
       <div className="bg-[#ff0000] mt-2 py-2.5 flex justify-center items-center px-6 shadow-md border-y border-white/10">
         <Mail size={24} className="text-white fill-white" />
         <span className="text-white font-black ml-2 text-sm tracking-widest uppercase animate-pulse">🔥 HOT JACKPOT ALERT : WIN BIG TODAY!</span>
       </div>
 
-      {/* 3 & 4 Digits Game Title */}
+      {/* 3 & 4 Digits Game Title with Diamond Icon */}
       <div className="px-5 py-6 flex items-center gap-3">
         <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center shadow-lg">
            <Diamond className="text-white fill-white" size={24} />
@@ -115,58 +109,53 @@ const Dashboard = () => {
         <h2 className="text-3xl font-black text-red-600 font-sans tracking-tighter uppercase">3 & 4 Digits Game</h2>
       </div>
 
-      {/* Games Grid */}
-      {loading ? (
-        <div className="flex justify-center p-20">
-          <Loader2 className="animate-spin text-red-600" size={40} />
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-4 px-4 pb-10">
-          {games.map((game) => (
-            <div 
-              key={game.id} 
-              className={`game-card-gradient p-4 rounded-3xl relative overflow-hidden h-[160px] shadow-2xl border border-white/5 transition-all ${
-                game.closed ? 'opacity-60 grayscale scale-[0.98]' : 'cursor-pointer active:scale-95'
-              }`}
-              onClick={() => !game.closed && navigate(`/select/${game.id}`)}
-            >
-              <div className="absolute top-0 right-0 w-full h-full opacity-40 pointer-events-none">
-                <div className="absolute top-0 right-0 border-t-[4px] border-r-[4px] border-yellow-500/80 w-[70%] h-[70%] transform skew-x-[-15deg]"></div>
+      {/* Games Grid - Matching card design in Image 1 */}
+      <div className="grid grid-cols-2 gap-4 px-4 pb-10">
+        {games.map((game, idx) => (
+          <div 
+            key={idx} 
+            className={`game-card-gradient p-4 rounded-3xl relative overflow-hidden h-[160px] shadow-2xl border border-white/5 transition-all ${
+              game.closed ? 'opacity-60 grayscale scale-[0.98]' : 'cursor-pointer active:scale-95'
+            }`}
+            onClick={() => !game.closed && navigate(`/select/${idx + 1}`)}
+          >
+            {/* Gold Geometric Lines Overlay - More visible */}
+            <div className="absolute top-0 right-0 w-full h-full opacity-40 pointer-events-none">
+              <div className="absolute top-0 right-0 border-t-[4px] border-r-[4px] border-yellow-500/80 w-[70%] h-[70%] transform skew-x-[-15deg]"></div>
+            </div>
+            
+            <div className="relative z-10 flex flex-col justify-between h-full">
+              <div className="text-white">
+                <p className="text-[12px] font-black opacity-80 leading-tight uppercase tracking-tight">Booking Time</p>
+                {game.closed ? (
+                  <div className="h-10 flex items-center">
+                    <span className="bg-red-600 text-white px-4 py-1.5 rounded-full text-[12px] font-black uppercase tracking-widest animate-pulse shadow-lg">CLOSED</span>
+                  </div>
+                ) : (
+                  <CountdownTimer drawTime={game.time} />
+                )}
               </div>
               
-              <div className="relative z-10 flex flex-col justify-between h-full">
-                <div className="text-white">
-                  <p className="text-[12px] font-black opacity-80 leading-tight uppercase tracking-tight">Booking Time</p>
-                  {game.closed ? (
-                    <div className="h-10 flex items-center">
-                      <span className="bg-red-600 text-white px-4 py-1.5 rounded-full text-[12px] font-black uppercase tracking-widest animate-pulse shadow-lg">CLOSED</span>
-                    </div>
-                  ) : (
-                    <CountdownTimer drawTime={game.time} />
-                  )}
-                </div>
-                
-                <div className="flex justify-between items-end mt-3 border-t border-white/10 pt-2">
-                  <span className="text-white text-[13px] font-black drop-shadow-md">{game.time}</span>
-                  {game.type === 'dear' ? (
-                    <div className="flex flex-col items-end leading-[0.8]">
-                      <span className="text-yellow-400 font-black text-[18px] italic tracking-tighter shadow-black drop-shadow-sm">DEAR</span>
-                      <span className="text-cyan-400 text-[9px] font-black tracking-[0.2em]">LOTTERY</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                       <div className="w-7 h-7 bg-green-500 rounded-full flex items-center justify-center font-black text-[12px] text-black shadow-md">K</div>
-                       <span className="text-green-500 text-[10px] font-black leading-none uppercase">Kerala<br/>Lottery</span>
-                    </div>
-                  )}
-                </div>
+              <div className="flex justify-between items-end mt-3 border-t border-white/10 pt-2">
+                <span className="text-white text-[13px] font-black drop-shadow-md">{game.time}</span>
+                {game.type === 'dear' ? (
+                  <div className="flex flex-col items-end leading-[0.8]">
+                    <span className="text-yellow-400 font-black text-[18px] italic tracking-tighter shadow-black drop-shadow-sm">DEAR</span>
+                    <span className="text-cyan-400 text-[9px] font-black tracking-[0.2em]">LOTTERY</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                     <div className="w-7 h-7 bg-green-500 rounded-full flex items-center justify-center font-black text-[12px] text-black shadow-md">K</div>
+                     <span className="text-green-500 text-[10px] font-black leading-none uppercase">Kerala<br/>Lottery</span>
+                  </div>
+                )}
               </div>
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
 
-      {/* Jackpot Title */}
+      {/* Jackpot Title with Diamond Icon */}
       <div className="px-5 py-4 flex items-center gap-3 border-t border-gray-100 pt-8">
         <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center shadow-lg">
            <Diamond className="text-white fill-white" size={24} />
@@ -174,7 +163,7 @@ const Dashboard = () => {
         <h2 className="text-3xl font-black text-red-600 font-sans tracking-tighter uppercase">Jackpot</h2>
       </div>
 
-      {/* Jackpot Banner */}
+      {/* Jackpot Banner - New Generated Green Banner */}
       <div className="px-4 py-4">
         <div 
           className="rounded-3xl overflow-hidden shadow-2xl border-2 border-green-500/20"
@@ -188,7 +177,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Hero Buttons */}
+      {/* Exact Buttons from Image 1 with higher contrast */}
       <div className="flex gap-4 px-10 pb-20 pt-4">
         <button 
           className="bg-[#ff004d] text-white py-4 px-6 rounded-xl font-black text-xl shadow-[0_10px_20px_rgba(255,0,77,0.3)] active:scale-95 flex-1 uppercase tracking-tight"
@@ -208,4 +197,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 
-const BettingCard = ({ title, winText: initialWinText, price: initialPrice, digits = 1, gameName = "Dear Lottery", priceOptions = [], customRows = null }) => {
+const BettingCard = ({ title, winText: initialWinText, price: initialPrice, digits = 1, gameName = "Dear Lottery", drawTime = "", priceOptions = [], customRows = null }) => {
   const { addToCart } = useCart();
   const [selectedTier, setSelectedTier] = useState(priceOptions.length > 0 ? priceOptions[0] : null);
   
@@ -72,11 +72,12 @@ const BettingCard = ({ title, winText: initialWinText, price: initialPrice, digi
 
     permutations.forEach(num => {
       addToCart({
-        title: `${gameName} - ${title} (BOX) (Price: ${currentPrice})`,
+        title: `[${drawTime}] ${gameName} - ${title} (BOX)`,
         num: num,
         qty: row.qty,
         price: parseFloat(currentPrice),
         type: typeLabel,
+        draw: drawTime,
         pos: posLabel,
         board: posLabel
       });
@@ -107,11 +108,12 @@ const BettingCard = ({ title, winText: initialWinText, price: initialPrice, digi
     }
 
     addToCart({
-      title: `${gameName} - ${title} (${boardLabel})`,
+      title: `[${drawTime}] ${gameName} - ${title} (${boardLabel})`,
       num: row.numbers.join(''),
       qty: row.qty,
       price: parseFloat(currentPrice),
       type: title === "Single Digit" ? "1D" : title === "Double Digits" ? "2D (DOUBLE)" : title === "Three Digits" ? "3D" : "4D",
+      draw: drawTime,
       pos: boardLabel,
       board: boardLabel
     });

@@ -19,24 +19,24 @@ const LoginPage = () => {
 
     let loginEmail = identifier;
     
-    // Logic to handle admin/user aliases or mobile numbers
-    if (identifier.toLowerCase() === 'admin') {
+    // Exact mapping for mock default accounts to match legacy behavior
+    const idLower = identifier.toLowerCase();
+    if (idLower === 'admin') {
       loginEmail = 'admin@lottery.com';
-    } else if (identifier.toLowerCase() === 'user') {
-      loginEmail = 'user@lottery.com'; // Default user for testing if needed
+    } else if (idLower === 'user') {
+      loginEmail = 'user@lottery.com';
     } else if (/^\d{10}$/.test(identifier)) {
       loginEmail = `${identifier}@lottery.com`;
     } else if (!identifier.includes('@')) {
-       // Fallback for other potential IDs
-       loginEmail = `${identifier}@lottery.com`;
+      loginEmail = `${identifier}@lottery.com`;
     }
 
     const result = await login(loginEmail, password);
     setLoading(false);
 
     if (result.success) {
-      // The user object is updated in context automatically by onAuthStateChanged
-      navigate('/home'); 
+      // Navigate to / so LandingPage logic can direct based on role
+      navigate('/'); 
     } else {
       setError(result.message);
     }

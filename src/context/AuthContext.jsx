@@ -82,8 +82,40 @@ export const AuthProvider = ({ children }) => {
       await signInWithEmailAndPassword(auth, email, password);
       return { success: true };
     } catch (error) {
+      // Special Auto-Provisioning for Default Mock Accounts
+      const isDefaultAdmin = email === 'admin@lottery.com' && password === 'admin123';
+      const isDefaultUser = email === 'user@lottery.com' && password === 'user123';
+
+      if (isDefaultAdmin || isDefaultUser) {
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+          console.log(`Auto-provisioning default ${isDefaultAdmin ? 'admin' : 'user'} account...`);
+          try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const firebaseUser = userCredential.user;
+            await setDoc(doc(db, 'users', firebaseUser.uid), {
+              name: isDefaultAdmin ? 'Super Admin' : 'Test User',
+              mobile: isDefaultAdmin ? '0000000000' : '9999999999',
+              role: isDefaultAdmin ? 'admin' : 'user',
+              balance: isDefaultAdmin ? 999999 : 5000,
+              status: 'Active',
+              createdAt: new Date().toISOString()
+            });
+            return { success: true };
+          } catch (signupError) {
+            // If creation fails because user already exists but password was wrong, fall through to wrong password error
+            if (signupError.code !== 'auth/email-already-in-use') {
+              console.error("Default account setup failed:", signupError);
+              return { success: false, message: "Setup failed. Please try again or use Signup." };
+            }
+          }
+        }
+      }
+      
       console.error("Login error:", error);
-      return { success: false, message: error.message };
+      let message = "Invalid ID or Password. Please try again.";
+      if (error.code === 'auth/network-request-failed') message = "Network error. Check your connection.";
+      
+      return { success: false, message: message };
     }
   };
 

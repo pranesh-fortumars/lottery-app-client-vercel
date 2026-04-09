@@ -27,43 +27,61 @@ import {
 export const Header = ({ title = "DIAMOND AGENCY" }) => {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
-  const { notifications, markAllRead } = useCart();
+  const { notifications, markAllRead, lastAnnouncement } = useCart();
   const [showNotifs, setShowNotifs] = useState(false);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const handleOpenNotifs = () => {
     setShowNotifs(true);
-    // Mark as read when opened or provide a button
   };
 
   return (
     <>
-      <header className="bg-gradient-to-r from-[#ff0033] to-[#ff4d6a] text-white flex items-center justify-between px-4 z-[1000] shadow-lg w-full shrink-0 border-b border-white/10" style={{ height: '70px' }}>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-md border border-white/10 shadow-inner">
-             <img src="https://img.icons8.com/color/48/000000/treasure-chest.png" alt="Logo" className="w-7 h-7" />
+      <header className="bg-gradient-to-r from-[#ff0033] to-[#ff4d6a] text-white flex flex-col z-[1000] shadow-lg w-full shrink-0 border-b border-white/10 overflow-hidden">
+        <div className="flex items-center justify-between px-4" style={{ height: '70px' }}>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-md border border-white/10 shadow-inner">
+               <img src="https://img.icons8.com/color/48/000000/treasure-chest.png" alt="Logo" className="w-7 h-7" />
+            </div>
+            <h1 className="text-lg font-condensed font-black tracking-tighter uppercase italic leading-none">{title}</h1>
           </div>
-          <h1 className="text-lg font-condensed font-black tracking-tighter uppercase italic leading-none">{title}</h1>
+          <div className="flex items-center gap-2">
+            {user && (
+              <button 
+                onClick={handleOpenNotifs}
+                className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center hover:bg-white/20 transition-all border border-white/5 relative"
+              >
+                <Bell size={22} strokeWidth={2.5} />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-black text-white text-[8px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#ff0033] animate-pulse">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+            )}
+            <NavLink to="/profile" className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center hover:bg-white/20 transition-all border border-white/5 pointer-events-auto">
+              <User size={22} strokeWidth={2.5} />
+            </NavLink>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          {user && (
-            <button 
-              onClick={handleOpenNotifs}
-              className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center hover:bg-white/20 transition-all border border-white/5 relative"
+
+        {/* Global Result Ticker / Breaking News */}
+        <AnimatePresence>
+          {lastAnnouncement && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="bg-black text-[9px] font-black uppercase text-yellow-400 py-2 border-t border-white/10 overflow-hidden whitespace-nowrap"
             >
-              <Bell size={22} strokeWidth={2.5} />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-black text-white text-[8px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#ff0033] animate-pulse">
-                  {unreadCount}
-                </span>
-              )}
-            </button>
+              <div className="animate-marquee inline-block px-4">
+                <span className="text-white px-2 py-0.5 bg-red-600 rounded mr-4">BREAKING NEWS</span>
+                {lastAnnouncement.message} • {lastAnnouncement.ticker} • CHECK RESULTS TAB FOR DETAILS • 
+              </div>
+            </motion.div>
           )}
-          <NavLink to="/profile" className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center hover:bg-white/20 transition-all border border-white/5 pointer-events-auto">
-            <User size={22} strokeWidth={2.5} />
-          </NavLink>
-        </div>
+        </AnimatePresence>
       </header>
 
       {/* Notification Drawer Overlay */}

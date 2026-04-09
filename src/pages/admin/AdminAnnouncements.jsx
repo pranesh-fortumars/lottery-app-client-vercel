@@ -139,10 +139,21 @@ const AdminAnnouncements = () => {
 
   const handleDeclareResult = () => {
     const { X, A, B, C } = resultDigits;
+    const today = new Date().toLocaleDateString();
+    
     if (!X || !A || !B || !C) return alert("Please enter all result digits.");
-    const already = declaredResults.find(r => r.draw === selectedSlot && r.date === new Date().toLocaleDateString());
-    if (already) return alert("Error: Result already announced.");
-    addResult({ draw: selectedSlot, brand: marketSelection === 'DEAR' ? 'DEARLOT' : 'KERELALOT', digits: resultDigits, prizes: prizeConfigs });
+    
+    const already = declaredResults.find(r => r.draw === selectedSlot && r.date === today);
+    if (already) return alert("Error: Result already announced for this slot today.");
+    
+    addResult({ 
+      draw: selectedSlot, 
+      date: today,
+      brand: marketSelection === 'DEAR' ? 'DEARLOT' : 'KERELALOT', 
+      digits: resultDigits, 
+      prizes: prizeConfigs 
+    });
+    
     alert(`RESULT ANNOUNCED: ${X}${A}${B}${C}`);
     setWorkflowStep('root');
     setResultDigits({ X: '', A: '', B: '', C: '' });
@@ -270,78 +281,73 @@ const AdminAnnouncements = () => {
       )}
 
       {activeTab === 'analysis' && (
-        <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+        <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500 max-w-2xl mx-auto">
            {!showDetailSlot ? (
-             <div className="bg-white rounded-[3rem] p-8 shadow-2xl border border-gray-50 space-y-10">
-                <div className="flex items-center gap-3">
-                   <BarChart3 className="text-[#ff0000]" size={28} />
-                   <h3 className="font-condensed font-black text-2xl italic uppercase tracking-tighter">Live Market Monitor</h3>
+             <div className="space-y-8 pb-10">
+                {/* Compact Intelligence Header */}
+                <div className="bg-white rounded-[2rem] p-6 shadow-xl border border-red-50 relative overflow-hidden">
+                   <div className="absolute top-0 right-0 w-48 h-48 bg-red-50/50 rounded-full blur-3xl -mr-24 -mt-16"></div>
+                   <div className="relative z-10 flex justify-between items-center">
+                      <div className="flex items-center gap-4">
+                         <div className="w-14 h-14 bg-red-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-red-500/10"><BarChart3 size={28} /></div>
+                         <div>
+                            <h3 className="font-black text-2xl font-condensed italic uppercase tracking-tighter leading-none">Market Intel</h3>
+                            <div className="flex items-center gap-2 mt-1.5 bg-emerald-50 px-2 py-0.5 rounded-md w-fit">
+                               <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                               <span className="text-[8px] font-black text-emerald-600 uppercase tracking-widest">Live Terminal Active</span>
+                            </div>
+                         </div>
+                      </div>
+                      <div className="text-right">
+                         <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Network Volume</p>
+                         <p className="text-2xl font-black font-condensed italic text-gray-950">₹ {Object.values(dynamicAnalyticFeed).reduce((sum, d) => sum + d.totalValue, 0).toLocaleString()}</p>
+                      </div>
+                   </div>
                 </div>
 
                 {Object.keys(drawAssignments).map(mKey => (
-                   <div key={mKey} className="space-y-6">
-                      <div className="flex items-center gap-3">
-                         <div className="h-5 w-1.5 bg-[#ff0000] rounded-full"></div>
-                         <h4 className="text-[14px] font-black uppercase tracking-widest text-gray-900 italic underline decoration-red-100 underline-offset-8">{mKey} MARKET</h4>
+                   <div key={mKey} className="space-y-4">
+                      <div className="flex items-center gap-4 px-2">
+                         <div className="bg-gray-900 px-4 py-1.5 rounded-full"><span className="text-[9px] font-black text-white uppercase tracking-[0.2em] italic">{mKey} REGION</span></div>
+                         <div className="h-px flex-grow bg-gray-100"></div>
                       </div>
 
-                      <div className="grid grid-cols-1 gap-6">
+                      <div className="grid grid-cols-1 gap-4">
                          {drawAssignments[mKey].map(slot => {
                             const data = dynamicAnalyticFeed[slot];
                             return (
-                               <div key={slot} onClick={() => setShowDetailSlot(slot)} className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-xl flex flex-col gap-8 hover:border-red-500 group transition-all cursor-pointer relative overflow-hidden">
-                                  <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity"><Shapes size={80} /></div>
+                               <div key={slot} onClick={() => setShowDetailSlot(slot)} className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-lg flex flex-col gap-6 hover:shadow-2xl transition-all cursor-pointer relative overflow-hidden active:scale-[0.99] group">
+                                  <div className="absolute -top-10 -right-10 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity transform group-hover:rotate-12 duration-1000"><Shapes size={180} /></div>
                                   
-                                  <div className="flex justify-between items-center border-b border-gray-100 pb-4">
+                                  <div className="flex justify-between items-start relative z-10">
                                      <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-[#ff0000]"><Clock size={24} /></div>
-                                        <p className="text-xl font-black font-condensed italic">{slot}</p>
-                                     </div>
-                                     <div className="flex items-center gap-6">
-                                        <div className="text-right">
-                                           <p className="text-[10px] font-black text-[#ff0000] uppercase tracking-tighter italic">Market Intake</p>
-                                           <p className="text-2xl font-black font-condensed italic">₹ {data.totalValue.toLocaleString()}</p>
+                                        <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-gray-300 group-hover:bg-red-600 group-hover:text-white transition-all"><Clock size={24} /></div>
+                                        <div>
+                                           <div className="flex items-center gap-2">
+                                              <p className="text-xl font-black font-condensed italic leading-none">{slot}</p>
+                                              {data.totalQty > 0 && <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>}
+                                           </div>
+                                           <p className="text-[8px] font-black text-gray-300 uppercase tracking-widest mt-1">ID: #{Math.floor(Math.random() * 9999)}</p>
                                         </div>
-                                        <ChevronRight size={24} className="text-gray-200 group-hover:text-red-500 transition-all group-hover:translate-x-1" />
+                                     </div>
+                                     <div className="text-right">
+                                        <p className="text-[9px] font-black text-[#ff0000] uppercase italic mb-0.5">COLLECTION</p>
+                                        <p className="text-2xl font-black font-condensed italic text-gray-950 leading-none">₹ {data.totalValue.toLocaleString()}</p>
                                      </div>
                                   </div>
 
-                                  <div className="grid grid-cols-1 gap-4">
-                                     <div className="bg-gray-50/50 p-5 rounded-3xl border border-gray-100">
-                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-4 italic">1D Board Allocation</p>
-                                        <div className="grid grid-cols-3 gap-3">
-                                           {['A', 'B', 'C'].map(pos => (
-                                              <div key={pos} className="bg-white p-3 rounded-2xl shadow-sm flex flex-col items-center">
-                                                 <span className="text-[10px] font-black text-red-600 mb-1">{pos}</span>
-                                                 <span className="text-lg font-black font-condensed italic leading-none">{data.combinationTable['1D'][pos]}</span>
-                                              </div>
-                                           ))}
-                                        </div>
+                                  <div className="grid grid-cols-3 gap-3 relative z-10">
+                                     <div className="bg-gray-50/50 p-3.5 rounded-2xl border border-gray-100/50 flex flex-col items-center">
+                                        <p className="text-[7px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Tickets</p>
+                                        <span className="text-lg font-black font-condensed italic text-gray-900">{data.totalQty}</span>
                                      </div>
-                                     <div className="bg-gray-50/50 p-5 rounded-3xl border border-gray-100">
-                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-4 italic">2D Pattern Intake</p>
-                                        <div className="grid grid-cols-3 gap-3">
-                                           {['AB', 'BC', 'AC'].map(pos => (
-                                              <div key={pos} className="bg-white p-3 rounded-2xl shadow-sm flex flex-col items-center">
-                                                 <span className="text-[10px] font-black text-red-600 mb-1">{pos}</span>
-                                                 <span className="text-lg font-black font-condensed italic leading-none">{data.combinationTable['2D'][pos]}</span>
-                                              </div>
-                                           ))}
-                                        </div>
+                                     <div className="bg-gray-50/50 p-3.5 rounded-2xl border border-gray-100/50 flex flex-col items-center">
+                                        <p className="text-[7px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Combos</p>
+                                        <span className="text-lg font-black font-condensed italic text-gray-900">{data.topNumbers.length}</span>
                                      </div>
-                                     <div className="grid grid-cols-2 gap-4">
-                                        <div className="bg-gray-900 p-5 rounded-3xl border border-black shadow-lg">
-                                           <div className="flex justify-between items-end">
-                                              <div><p className="text-[8px] font-black text-red-500 uppercase tracking-widest mb-1">3D TRIPLE</p><p className="text-[9px] font-bold text-white uppercase italic">ABC Slot</p></div>
-                                              <p className="text-2xl font-black font-condensed italic text-white leading-none">{data.combinationTable['3D'].ABC}</p>
-                                           </div>
-                                        </div>
-                                        <div className="bg-gray-900 p-5 rounded-3xl border border-black shadow-lg">
-                                           <div className="flex justify-between items-end">
-                                              <div><p className="text-[8px] font-black text-red-500 uppercase tracking-widest mb-1">4D JACKPOT</p><p className="text-[9px] font-bold text-white uppercase italic">XABC Slot</p></div>
-                                              <p className="text-2xl font-black font-condensed italic text-white leading-none">{data.combinationTable['4D'].XABC}</p>
-                                           </div>
-                                        </div>
+                                     <div className="bg-gray-950 p-3.5 rounded-2xl flex flex-col items-center justify-center group-hover:bg-[#ff0000] transition-colors">
+                                        <p className="text-[7px] font-black text-white/30 uppercase tracking-widest mb-0.5">Status</p>
+                                        <div className="text-white font-black text-[9px] uppercase tracking-widest">{data.ready ? 'STAGED' : 'INTAKE'}</div>
                                      </div>
                                   </div>
                                </div>
@@ -353,28 +359,78 @@ const AdminAnnouncements = () => {
              </div>
            ) : (
              <div className="space-y-6 animate-in slide-in-from-right-4">
-                <div className="bg-gray-900 rounded-[3rem] p-8 text-white flex justify-between items-center shadow-2xl">
-                   <div className="flex items-center gap-4">
-                      <button onClick={() => setShowDetailSlot(null)} className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center hover:bg-white/20"><ChevronRight size={24} className="rotate-180" /></button>
-                      <div><p className="text-[11px] font-black uppercase text-red-500 tracking-[.2em] mb-1">Intake Drill-Down</p><h4 className="text-3xl font-black font-condensed italic leading-none">{showDetailSlot}</h4></div>
+                <div className="bg-gray-950 rounded-[3rem] p-10 text-white flex justify-between items-center shadow-2xl relative overflow-hidden border-b-8 border-red-600">
+                   <div className="absolute top-0 right-0 w-64 h-64 bg-red-600/10 rounded-full blur-3xl"></div>
+                   <div className="flex items-center gap-6 relative z-10">
+                      <button onClick={() => setShowDetailSlot(null)} className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center hover:bg-white/10 border border-white/5 transition-all"><ChevronRight size={32} className="rotate-180" /></button>
+                      <div>
+                         <p className="text-[11px] font-black uppercase text-red-500 tracking-[.3em] mb-2">Detailed Intake Analysis</p>
+                         <h4 className="text-4xl font-black font-condensed italic leading-none">{showDetailSlot}</h4>
+                      </div>
                    </div>
-                   <div className="text-right"><p className="text-[10px] font-black uppercase opacity-60 italic mb-1">Total Draw Volume</p><p className="text-2xl font-black font-condensed italic tracking-widest">₹ {dynamicAnalyticFeed[showDetailSlot].totalValue.toLocaleString()}</p></div>
+                   <div className="text-right relative z-10">
+                      <div className="text-[10px] font-black uppercase opacity-60 italic mb-2 tracking-widest text-emerald-400 flex items-center gap-2 bg-emerald-500/10 px-3 py-1 rounded-full justify-end w-fit ml-auto">
+                         <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div> REAL-TIME STREAM
+                      </div>
+                      <p className="text-3xl font-black font-condensed italic tracking-widest text-white">₹ {dynamicAnalyticFeed[showDetailSlot].totalValue.toLocaleString()}</p>
+                   </div>
                 </div>
-                <div className="bg-white rounded-[3rem] p-8 shadow-2xl border border-gray-100 space-y-8">
-                   <div className="flex items-center gap-3 border-b border-gray-100 pb-8"><Target className="text-[#ff0000]" size={24} /><h5 className="text-[14px] font-black uppercase tracking-widest italic tracking-tighter">Combination Intake Matrix</h5></div>
-                   <div className="grid grid-cols-1 gap-4">
+
+                <div className="bg-white rounded-[3rem] p-10 shadow-2xl border border-gray-100 space-y-10">
+                   <div className="flex items-center justify-between border-b border-gray-50 pb-10">
+                      <div className="flex items-center gap-3">
+                         <Target className="text-red-600" size={28} />
+                         <h5 className="text-[16px] font-black uppercase tracking-widest italic tracking-tighter">Combination Matrix</h5>
+                      </div>
+                      <div className="bg-gray-50 px-6 py-2 rounded-2xl border border-gray-100 italic text-[10px] font-black uppercase text-gray-400">Total Unique Numbers: {dynamicAnalyticFeed[showDetailSlot].topNumbers.length}</div>
+                   </div>
+                   
+                   <div className="grid grid-cols-1 gap-6">
                       {dynamicAnalyticFeed[showDetailSlot].topNumbers.map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-6 bg-gray-50 rounded-[2rem] border border-gray-100 group transition-all">
-                           <div className="flex items-center gap-6">
-                              <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center font-black text-sm text-[#ff0000] shadow-xl">{idx + 1}</div>
+                        <div key={idx} className="flex items-center justify-between p-8 bg-gray-50/50 rounded-[2.5rem] border-2 border-transparent hover:border-red-500/20 hover:bg-white transition-all group shadow-sm hover:shadow-xl">
+                           <div className="flex items-center gap-8">
+                              <div className="w-16 h-16 bg-white rounded-[1.5rem] flex items-center justify-center font-black text-xl text-red-600 shadow-xl border border-red-50 relative">
+                                 {idx + 1}
+                                 <div className="absolute -top-1 -left-1 w-3 h-3 bg-red-600 rounded-full"></div>
+                              </div>
                               <div>
-                                 <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest italic mb-2">{item.type} | {item.pos}</p>
-                                 <div className="flex gap-2.5">{String(item.num).split('').map((n, i) => (<span key={i} className="w-10 h-10 bg-gray-900 text-white rounded-xl flex items-center justify-center font-black text-xl shadow-lg border-b-4 border-red-600">{n}</span>))}</div>
+                                 <div className="flex items-center gap-3 mb-3">
+                                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                                       item.type === '4D' ? 'bg-black text-white' :
+                                       item.type === '3D' ? 'bg-red-600 text-white' :
+                                       'bg-gray-200 text-gray-700'
+                                    }`}>
+                                       {item.type}
+                                    </span>
+                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest italic">{item.pos} BOARD</span>
+                                 </div>
+                                 <div className="flex gap-3">
+                                    {String(item.num).split('').map((n, i) => (
+                                       <span key={i} className="w-12 h-12 bg-gray-900 text-white rounded-2xl flex items-center justify-center font-black text-2xl shadow-xl border-b-4 border-red-600 group-hover:scale-110 transition-transform">
+                                          {n}
+                                       </span>
+                                    ))}
+                                 </div>
                               </div>
                            </div>
-                           <div className="text-right flex flex-col items-end"><p className="text-[10px] font-black text-red-600 uppercase mb-2">Total Tickets</p><div className="bg-white px-5 py-2 rounded-2xl border-2 border-red-500 text-2xl font-black font-condensed italic">{item.qty}</div></div>
+                           <div className="text-right">
+                              <div className="mb-2">
+                                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Intake Amount</p>
+                                 <p className="text-xl font-black font-condensed italic text-gray-900">₹ {item.totalVal.toLocaleString()}</p>
+                              </div>
+                              <div className="bg-white px-6 py-4 rounded-[1.5rem] border-2 border-red-500 shadow-lg group-hover:bg-red-600 group-hover:text-white transition-all text-center">
+                                 <p className="text-[9px] font-black uppercase opacity-60 mb-0.5">Tickets</p>
+                                 <p className="text-2xl font-black font-condensed italic leading-none">{item.qty}</p>
+                              </div>
+                           </div>
                         </div>
                       ))}
+                      {dynamicAnalyticFeed[showDetailSlot].topNumbers.length === 0 && (
+                         <div className="py-20 text-center opacity-20">
+                            <Gamepad2 size={48} className="mx-auto mb-4" />
+                            <p className="text-xs font-black uppercase tracking-widest">No tickets purchased for this slot yet.</p>
+                         </div>
+                      )}
                    </div>
                 </div>
              </div>

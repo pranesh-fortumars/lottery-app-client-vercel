@@ -12,14 +12,14 @@ import {
   CheckCircle2,
   ChevronRight,
   ShieldCheck,
-  Loader2
+  AlertCircle
 } from 'lucide-react';
-import { streamUsers } from '../../services/firebaseService';
-import { useAuth } from '../../context/AuthContext';
+import { subscribeToUsers } from '../../services/firebaseService';
+import { db } from '../../firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const AdminUsers = () => {
   const navigate = useNavigate();
-  const { signup } = useAuth(); // Use signup for registering new players via Firebase Auth
   const [showAddForm, setShowAddForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [users, setUsers] = useState([]);
@@ -28,14 +28,13 @@ const AdminUsers = () => {
   const [newUser, setNewUser] = useState({
     name: '',
     email: '',
-    phone: '',
-    balance: '',
-    password: 'password123' // Default password for new registrations
+    mobile: '',
+    balance: ''
   });
 
   useEffect(() => {
-    const unsubscribe = streamUsers((data) => {
-      setUsers(data);
+    const unsubscribe = subscribeToUsers((fetchedUsers) => {
+      setUsers(fetchedUsers);
       setLoading(false);
     });
     return () => unsubscribe();
@@ -43,32 +42,32 @@ const AdminUsers = () => {
 
   const handleAddUser = async (e) => {
     e.preventDefault();
-    if (!newUser.name || !newUser.phone) return;
+    if (!newUser.name || !newUser.mobile) return;
 
-    // Firebase Auth needs an email, so we use our virtual email logic
-    const virtualEmail = newUser.email || `${newUser.phone}@lottery.com`;
-    
-    setLoading(true);
-    const result = await signup(virtualEmail, newUser.password, {
-      name: newUser.name,
-      mobile: newUser.phone,
-      balance: newUser.balance ? parseInt(newUser.balance) : 0,
-      role: 'user'
-    });
-    setLoading(false);
+    try {
+      const userToAdd = {
+        name: newUser.name,
+        email: newUser.email,
+        mobile: newUser.mobile,
+        balance: newUser.balance ? parseInt(newUser.balance) : 0,
+        status: 'Active',
+        role: 'user',
+        createdAt: serverTimestamp()
+      };
 
-    if (result.success) {
-      setNewUser({ name: '', email: '', phone: '', balance: '', password: 'password123' });
+      await addDoc(collection(db, 'users'), userToAdd);
+      
+      setNewUser({ name: '', email: '', mobile: '', balance: '' });
       setShowAddForm(false);
-    } else {
-      alert("Error: " + result.message);
+    } catch (error) {
+      console.error("Error adding user:", error);
+      alert("Failed to register user");
     }
   };
 
   const filteredUsers = users.filter(user => 
-    (user.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-    (user.mobile?.includes(searchTerm)) ||
-    (user.phone?.includes(searchTerm))
+    (user.name?.toLowerCase().includes(searchTerm.toLowerCase()) || '') ||
+    (user.mobile?.includes(searchTerm) || '')
   );
 
   return (
@@ -91,7 +90,7 @@ const AdminUsers = () => {
            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-[#f42464] transition-colors" size={20} />
            <input 
              type="text" 
-             placeholder="Search by name or phone..." 
+             placeholder="Search by name or mobile..." 
              value={searchTerm}
              onChange={(e) => setSearchTerm(e.target.value)}
              className="w-full h-15 bg-white border border-gray-100 rounded-2xl pl-16 pr-6 outline-none font-bold text-gray-800 shadow-sm text-sm placeholder:text-gray-300 focus:border-[#f42464]/30 transition-all"
@@ -109,13 +108,14 @@ const AdminUsers = () => {
       {/* User Cards */}
       <div className="space-y-5">
         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4 mb-2 italic">Active Member List</p>
+        
         {loading ? (
-          <div className="flex justify-center p-10">
-            <Loader2 className="animate-spin text-[#f42464]" size={32} />
+          <div className="flex justify-center py-10">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#f42464]"></div>
           </div>
         ) : (
           <AnimatePresence>
-            {filteredUsers.map((user) => (
+            {filteredUsers.length > 0 ? filteredUsers.map((user) => (
               <motion.div 
                 layout
                 initial={{ opacity: 0, y: 10 }}
@@ -126,11 +126,11 @@ const AdminUsers = () => {
               >
                  <div className="flex items-center gap-4 relative z-10">
                     <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center text-[#f42464] font-black text-xl border border-white shadow-sm group-hover:bg-[#f42464] group-hover:text-white transition-all transform group-hover:rotate-6">
-                       {(user.name || 'U').charAt(0)}
+                       {user.name?.charAt(0) || 'U'}
                     </div>
                     <div>
-                       <h4 className="font-black text-gray-800 text-sm tracking-tight uppercase italic">{user.name || 'Unknown'}</h4>
-                       <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-1">{user.mobile || user.phone || 'No Mobile'}</p>
+                       <h4 className="font-black text-gray-800 text-sm tracking-tight uppercase italic">{user.name || 'Anonymous'}</h4>
+                       <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-1">{user.mobile || 'No Mobile'}</p>
                     </div>
                  </div>
                  <div className="text-right flex items-center gap-4 relative z-10">
@@ -144,7 +144,12 @@ const AdminUsers = () => {
                     <ChevronRight size={20} className="text-gray-100 group-hover:text-[#f42464] transition-colors" />
                  </div>
               </motion.div>
-            ))}
+            )) : (
+              <div className="text-center py-10 opacity-30">
+                 <AlertCircle className="mx-auto mb-2" size={32} />
+                 <p className="text-[10px] font-black uppercase tracking-widest">No Players Found</p>
+              </div>
+            )}
           </AnimatePresence>
         )}
       </div>
@@ -170,8 +175,8 @@ const AdminUsers = () => {
               <div className="flex justify-between items-start border-b border-gray-50 pb-8">
                 <div>
                    <div className="flex items-center gap-3 mb-2">
-                      <UserPlus className="text-[#f42464]" size={24} />
-                      <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tighter italic leading-none">New Identity</h2>
+                       <UserPlus className="text-[#f42464]" size={24} />
+                       <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tighter italic leading-none">New Identity</h2>
                    </div>
                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Registering unique player credentials</p>
                 </div>
@@ -186,10 +191,9 @@ const AdminUsers = () => {
               <form onSubmit={handleAddUser} className="space-y-5">
                 {[
                   { label: 'Full Name', key: 'name', icon: User, type: 'text', placeholder: 'Legal name of player' },
-                  { label: 'Phone Number', key: 'phone', icon: Phone, type: 'tel', placeholder: '9100000000' },
+                  { label: 'Mobile Number', key: 'mobile', icon: Phone, type: 'tel', placeholder: '+91 00000 00000' },
                   { label: 'Email (Optional)', key: 'email', icon: Mail, type: 'email', placeholder: 'contact@player.com' },
                   { label: 'Starting Balance', key: 'balance', icon: Wallet, type: 'number', placeholder: '₹ 0.00' },
-                  { label: 'Password', key: 'password', icon: ShieldCheck, type: 'password', placeholder: '••••••••' },
                 ].map((field) => (
                   <div key={field.key} className="space-y-1.5">
                     <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">{field.label}</label>
@@ -209,10 +213,9 @@ const AdminUsers = () => {
 
                 <button 
                   type="submit"
-                  disabled={loading}
-                  className="w-full h-16 bg-gradient-to-r from-[#f42464] to-[#ff004d] text-white rounded-2xl font-black text-[12px] uppercase tracking-widest shadow-xl shadow-[#f42464]/20 flex items-center justify-center gap-3 mt-6 active:scale-95 transition-all disabled:opacity-50"
+                  className="w-full h-16 bg-gradient-to-r from-[#f42464] to-[#ff004d] text-white rounded-2xl font-black text-[12px] uppercase tracking-widest shadow-xl shadow-[#f42464]/20 flex items-center justify-center gap-3 mt-6 active:scale-95 transition-all"
                 >
-                   {loading ? 'Processing...' : 'Finalize Registration'} <CheckCircle2 size={24} className="text-white/40" />
+                   Finalize Registration <CheckCircle2 size={24} className="text-white/40" />
                 </button>
               </form>
             </motion.div>

@@ -1,113 +1,94 @@
 import { 
   collection, 
-  doc, 
   getDocs, 
   getDoc, 
-  setDoc, 
+  doc, 
   addDoc, 
   updateDoc, 
   deleteDoc, 
   query, 
   where, 
+  orderBy, 
   onSnapshot,
-  orderBy,
+  setDoc,
   serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
-// Helper to convert Firestore timestamp to JS Date or string
-const formatData = (doc) => {
-  const data = doc.data();
-  return { id: doc.id, ...data };
+// --- User Management ---
+
+export const getAllUsers = async () => {
+  const querySnapshot = await getDocs(collection(db, 'users'));
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
-// --- USER OPERATIONS ---
-
-export const streamUsers = (callback) => {
-  const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
-  return onSnapshot(q, (snapshot) => {
-    callback(snapshot.docs.map(formatData));
+export const subscribeToUsers = (callback) => {
+  return onSnapshot(collection(db, 'users'), (snapshot) => {
+    const users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    callback(users);
   });
 };
 
-export const updateUser = async (uid, data) => {
-  const userRef = doc(db, 'users', uid);
-  await updateDoc(userRef, data);
+export const getUserDetails = async (userId) => {
+  const userDoc = await getDoc(doc(db, 'users', userId));
+  return userDoc.exists() ? { id: userDoc.id, ...userDoc.data() } : null;
 };
 
-// --- GAME OPERATIONS ---
+export const updateUserBalance = async (userId, newBalance) => {
+  await updateDoc(doc(db, 'users', userId), { balance: newBalance });
+};
 
-export const streamGames = (callback) => {
-  const q = collection(db, 'games');
+export const updateUserStatus = async (userId, status) => {
+  await updateDoc(doc(db, 'users', userId), { status });
+};
+
+// --- Result / Game Management ---
+
+export const getResults = async () => {
+  const q = query(collection(db, 'results'), orderBy('timestamp', 'desc'));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
+export const subscribeToResults = (callback) => {
+  const q = query(collection(db, 'results'), orderBy('timestamp', 'desc'));
   return onSnapshot(q, (snapshot) => {
-    callback(snapshot.docs.map(formatData));
+    const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    callback(results);
   });
 };
 
-export const updateGame = async (gameId, data) => {
-  const gameRef = doc(db, 'games', gameId);
-  await updateDoc(gameRef, data);
-};
-
-// --- TICKET OPERATIONS ---
-
-export const buyTickets = async (userId, tickets) => {
-  const ticketsBatch = tickets.map(ticket => ({
-    userId,
-    ...ticket,
-    status: 'pending',
-    purchaseDate: serverTimestamp()
-  }));
-
-  const results = [];
-  for (const ticket of ticketsBatch) {
-    const docRef = await addDoc(collection(db, 'tickets'), ticket);
-    results.push(docRef.id);
-  }
-  return results;
-};
-
-export const streamUserTickets = (userId, callback) => {
-  const q = query(
-    collection(db, 'tickets'), 
-    where('userId', '==', userId),
-    orderBy('purchaseDate', 'desc')
-  );
-  return onSnapshot(q, (snapshot) => {
-    callback(snapshot.docs.map(formatData));
+export const createResult = async (resultData) => {
+  await addDoc(collection(db, 'results'), {
+    ...resultData,
+    timestamp: serverTimestamp()
   });
 };
 
-// --- ANNOUNCEMENT OPERATIONS ---
+// --- Announcements ---
 
-export const streamAnnouncements = (callback) => {
-  const q = query(collection(db, 'announcements'), orderBy('createdAt', 'desc'));
-  return onSnapshot(q, (snapshot) => {
-    callback(snapshot.docs.map(formatData));
-  });
+export const getAnnouncements = async () => {
+  const q = query(collection(db, 'announcements'), orderBy('timestamp', 'desc'));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
-export const addAnnouncement = async (data) => {
+export const createAnnouncement = async (data) => {
   await addDoc(collection(db, 'announcements'), {
     ...data,
-    createdAt: serverTimestamp()
+    timestamp: serverTimestamp()
   });
 };
 
-// --- INITIAL SEED (Run once if needed) ---
-export const seedInitialData = async () => {
-  // Check if games exist
-  const gamesSnap = await getDocs(collection(db, 'games'));
-  if (gamesSnap.empty) {
-    const initialGames = [
-      { time: '01:00 PM', name: 'DEAR', type: 'dear', status: 'active' },
-      { time: '06:00 PM', name: 'DEAR', type: 'dear', status: 'active' },
-      { time: '08:00 PM', name: 'DEAR', type: 'dear', status: 'active' },
-      { time: '03:00 PM', name: 'KERALA', type: 'kerala', status: 'active' }
-    ];
-    for (const game of initialGames) {
-      await addDoc(collection(db, 'games'), game);
-    }
-    console.log("Initial games seeded");
+// --- Tickets / Orders ---
+
+export const getTickets = async (userId = null) => {
+  let q = collection(db, 'tickets');
+  if (userId) {
+    q = query(q, where('userId', '==', userId), orderBy('timestamp', 'desc'));
+  } else {
+    q = query(q, orderBy('timestamp', 'desc'));
   }
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };

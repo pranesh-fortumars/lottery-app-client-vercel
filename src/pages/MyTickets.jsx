@@ -1,38 +1,52 @@
 import React, { useMemo } from 'react';
 import PageWrapper from '../components/PageWrapper';
-import { Ticket, Clock, Calendar, CheckCircle2, ChevronRight, ShoppingBag, Receipt, Printer, FileText, Trophy, Coins, Sparkles } from 'lucide-react';
+import { Ticket, Clock, Calendar, CheckCircle2, ChevronRight, ShoppingBag, Receipt, Printer, FileText, Trophy, Coins, Sparkles, RefreshCw } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
 
 const MyTickets = () => {
-  const { purchasedTickets } = useCart();
+  const { purchasedTickets, refreshTickets, loading } = useCart();
   const navigate = useNavigate();
 
   // Group tickets by purchaseId (Transaction ID)
   const groupedTransactions = useMemo(() => {
     const groups = {};
+    if (!purchasedTickets) return [];
+    
     purchasedTickets.forEach(ticket => {
-      const id = ticket.purchaseId;
+      // Use purchaseId as group key, fallback to ticket id if missing
+      const id = ticket.purchaseId || `T-${ticket.id}`;
       if (!groups[id]) {
         groups[id] = {
           id: id,
-          status: 'Active',
-          date: ticket.purchaseDate || 'N/A',
-          time: ticket.purchaseTime || 'N/A',
-          market: ticket.title.includes('DEAR') ? 'Dear' : 'Kerala',
-          slot: ticket.title.split('-')[1]?.split('(')[0]?.trim() || 'N/A',
+          status: ticket.status || 'Active',
+          date: ticket.purchaseDate || 'Today',
+          time: ticket.purchaseTime || 'Just Now',
+          market: ticket.title?.includes('DEAR') ? 'Dear' : 'Kerala',
+          slot: ticket.title?.split('-')[1]?.split('(')[0]?.trim() || 'General',
           tickets: []
         };
       }
       groups[id].tickets.push(ticket);
     });
-    return Object.values(groups).sort((a, b) => b.id.localeCompare(a.id));
+    return Object.values(groups);
   }, [purchasedTickets]);
 
   return (
     <PageWrapper title="PURCHASE HISTORY">
       <div className="bg-[#f8fbff] min-h-screen p-4 pb-24 space-y-8">
         
+        <div className="flex justify-between items-center px-4">
+           <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-widest italic">Live Ticket Archive</h2>
+           <button 
+            onClick={refreshTickets}
+            disabled={loading}
+            className="flex items-center gap-2 text-[#ff0000] font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all disabled:opacity-30"
+           >
+              {loading ? 'Updating...' : 'Refresh List'} <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
+           </button>
+        </div>
+
         {groupedTransactions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center space-y-6">
             <div className="w-20 h-20 bg-white rounded-[2.5rem] flex items-center justify-center text-gray-200 border-2 border-gray-100 shadow-xl">

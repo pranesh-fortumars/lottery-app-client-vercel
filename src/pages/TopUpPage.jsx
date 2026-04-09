@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import PageWrapper from '../components/PageWrapper';
 import { CreditCard, Wallet, ChevronRight, CheckCircle2, QrCode, Landmark, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 const TopUpPage = () => {
   const { user } = useAuth();
@@ -10,14 +12,30 @@ const TopUpPage = () => {
 
   const amounts = ['100.00', '200.00', '500.00', '1000.00', '2000.00', '5000.00'];
 
-  const handleTopup = (e) => {
+  const handleTopup = async (e) => {
     e.preventDefault();
+    if (!user) return;
+    
     setIsProcessing(true);
-    setTimeout(() => {
-      alert(`Successfully added ₹${amount} to your wallet!`);
+    try {
+      const topupVal = parseFloat(amount);
+      if (isNaN(topupVal) || topupVal <= 0) throw new Error("Invalid amount");
+
+      const userRef = doc(db, 'users', user.uid);
+      const newBalance = (user.balance || 0) + topupVal;
+      
+      await updateDoc(userRef, {
+        balance: newBalance
+      });
+
+      alert(`Successfully added ₹${topupVal} to your wallet!`);
       setIsProcessing(false);
       window.history.back();
-    }, 2000);
+    } catch (error) {
+      console.error("Topup error:", error);
+      alert("Transaction failed! Please try again.");
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -33,8 +51,8 @@ const TopUpPage = () => {
            
            <div className="mt-8 flex gap-4 pt-6 border-t border-white/10">
               <div className="flex-1 opacity-60">
-                 <p className="text-[8px] font-black uppercase tracking-widest leading-none mb-1">Last Recharge</p>
-                 <p className="text-[10px] font-bold italic uppercase tracking-tighter shadow-sm border border-white/10 rounded px-2 py-0.5 inline-block">10/03/26 4:32 PM</p>
+                 <p className="text-[8px] font-black uppercase tracking-widest leading-none mb-1">Vault Status</p>
+                 <p className="text-[10px] font-bold italic uppercase tracking-tighter shadow-sm border border-white/10 rounded px-2 py-0.5 inline-block text-emerald-300">Active & Secured</p>
               </div>
               <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center border border-white/10 shadow-inner">
                  <ShieldCheck size={20} />
@@ -86,11 +104,11 @@ const TopUpPage = () => {
               </button>
               
               <div className="flex gap-4">
-                 <button className="flex-1 bg-white border border-gray-100 p-4 rounded-xl flex flex-col items-center gap-2 shadow-sm active:bg-red-50 transition-colors">
+                 <button className="flex-1 bg-white border border-gray-100 p-4 rounded-xl flex flex-col items-center gap-2 shadow-sm active:bg-red-50 transition-colors cursor-not-allowed opacity-50">
                     <QrCode size={18} className="text-gray-400" />
                     <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Pay via UPI</span>
                  </button>
-                 <button className="flex-1 bg-white border border-gray-100 p-4 rounded-xl flex flex-col items-center gap-2 shadow-sm active:bg-blue-50 transition-colors">
+                 <button className="flex-1 bg-white border border-gray-100 p-4 rounded-xl flex flex-col items-center gap-2 shadow-sm active:bg-blue-50 transition-colors cursor-not-allowed opacity-50">
                     <Landmark size={18} className="text-gray-400" />
                     <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Bank Transfer</span>
                  </button>
@@ -107,3 +125,4 @@ const TopUpPage = () => {
 };
 
 export default TopUpPage;
+
