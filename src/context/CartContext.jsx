@@ -140,8 +140,11 @@ export const CartProvider = ({ children }) => {
         if (!res?.id || !res?.digits || processingResults.current.has(res.id)) continue;
         
         const resDraw = String(res.draw || "").trim();
+        const resDate = String(res.date || "").trim();
         const ticketsToAudit = userTickets.filter(t => 
-          String(t.draw || "").trim() === resDraw && t.processedBy !== res.id
+          String(t.draw || "").trim() === resDraw && 
+          String(t.purchaseDate || "").trim() === resDate &&
+          t.processedBy !== res.id
         );
 
         if (ticketsToAudit.length === 0) continue;
@@ -236,7 +239,7 @@ export const CartProvider = ({ children }) => {
       const batch = writeBatch(db);
 
       const now = new Date();
-      const purchaseDate = now.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' }).replace(/\//g, '/');
+      const purchaseDate = now.toISOString().split('T')[0];
       const purchaseTime = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
 
       cart.forEach(item => {

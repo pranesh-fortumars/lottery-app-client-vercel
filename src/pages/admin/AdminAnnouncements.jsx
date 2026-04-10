@@ -139,7 +139,7 @@ const AdminAnnouncements = () => {
 
   const handleDeclareResult = () => {
     const { X, A, B, C } = resultDigits;
-    const today = new Date().toLocaleDateString();
+    const today = new Date().toISOString().split('T')[0];
     
     if (X === '' || A === '' || B === '' || C === '') return alert("Please enter all result digits.");
     
