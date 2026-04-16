@@ -225,11 +225,13 @@ export const CartProvider = ({ children }) => {
   const removeFromCart = (id) => setCart((prev) => prev.filter((item) => item.id !== id));
   const clearCart = () => setCart([]);
 
-  const confirmPurchase = async () => {
+  const confirmPurchase = async (isPrepaid = false) => {
     if (cart.length === 0 || !user) return;
     
     const totalCost = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-    if (user.balance < totalCost) {
+    
+    // If not prepaid, check balance
+    if (!isPrepaid && user.balance < totalCost) {
       alert("Insufficient Balance!");
       return;
     }
@@ -252,14 +254,17 @@ export const CartProvider = ({ children }) => {
           purchaseDate: purchaseDate,
           purchaseTime: purchaseTime,
           status: 'Active',
+          paidVia: isPrepaid ? 'UPI' : 'Wallet',
           prize: '-',
           timestamp: serverTimestamp()
         });
       });
 
-      // Deduct balance
-      const userRef = doc(db, 'users', user.uid);
-      batch.update(userRef, { balance: increment(-totalCost) });
+      // Deduct balance ONLY if NOT prepaid
+      if (!isPrepaid) {
+        const userRef = doc(db, 'users', user.uid);
+        batch.update(userRef, { balance: increment(-totalCost) });
+      }
 
       await batch.commit();
       clearCart();

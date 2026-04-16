@@ -4,22 +4,50 @@ import PageWrapper from '../components/PageWrapper';
 import { ShoppingCart, Trash2, CreditCard, ChevronLeft } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { usePayment } from '../context/PaymentContext';
+import PaymentModal from '../components/PaymentModal';
 
 const CartPage = () => {
   const navigate = useNavigate();
   const { cart, removeFromCart, clearCart, cartTotal, confirmPurchase } = useCart();
   const { user } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
+  const { activePayment } = usePayment();
 
   const handlePay = () => {
     if (cart.length === 0) return;
+    
+    // Check if user has enough balance
+    if (user && user.balance >= cartTotal) {
+      // If they have balance, just proceed
+      setIsProcessing(true);
+      setTimeout(() => {
+        confirmPurchase();
+        alert("Purchase Successful! Your tickets are recorded in our system.");
+        setIsProcessing(false);
+        navigate('/tickets');
+      }, 1000);
+    } else {
+      // Otherwise prompt for payment
+      setShowPayment(true);
+    }
+  };
+
+  const handlePaymentConfirm = async () => {
+    setShowPayment(false);
     setIsProcessing(true);
-    setTimeout(() => {
-      confirmPurchase();
-      alert("Payment Successful! Your tickets are recorded in our system.");
-      setIsProcessing(false);
+    
+    try {
+      await confirmPurchase(true); // Passing true to indicate "payment done/bypass balance check"
+      alert("Payment Recorded! Your tickets will be confirmed after verification.");
       navigate('/tickets');
-    }, 1500);
+    } catch (error) {
+      console.error("Purchase error:", error);
+      alert("Failed to record payment. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const currentDate = new Date().toLocaleDateString('en-GB');
@@ -107,6 +135,24 @@ const CartPage = () => {
                ** Some items are removed automatically if draw time expires.
              </p>
           </div>
+
+          {/* Active Payment Method Info */}
+          {activePayment && (
+            <div className="bg-gradient-to-r from-red-50 to-white border-2 border-red-600/20 rounded-2xl p-4 flex items-center justify-between mb-6 shadow-sm">
+               <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-[#ff0033] rounded-xl flex items-center justify-center shadow-lg">
+                     <QrCode size={18} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Active UPI for Purchase</p>
+                    <p className="text-xs font-black text-gray-800 italic uppercase">{activePayment.upiId}</p>
+                  </div>
+               </div>
+               <div className="flex flex-col items-end">
+                  <span className="text-[8px] font-black bg-red-600 text-white px-2 py-0.5 rounded-full uppercase tracking-tighter">Verified</span>
+               </div>
+            </div>
+          )}
         </div>
 
         <button 
@@ -116,6 +162,13 @@ const CartPage = () => {
           <ChevronLeft size={14} /> Add more tickets
         </button>
       </div>
+
+      <PaymentModal 
+        isOpen={showPayment} 
+        onClose={() => setShowPayment(false)} 
+        amount={cartTotal.toFixed(2)}
+        onConfirm={handlePaymentConfirm}
+      />
     </PageWrapper>
   );
 };

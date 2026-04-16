@@ -26,6 +26,7 @@ import AdminReports from './pages/admin/AdminReports';
 import AdminSettings from './pages/admin/AdminSettings';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { PaymentProvider } from './context/PaymentContext';
 
 const ProtectedRoute = ({ children, role }) => {
   const { user } = useAuth();
@@ -48,6 +49,7 @@ const LandingPage = () => {
 function App() {
   return (
     <AuthProvider>
+    <PaymentProvider>
     <CartProvider>
       <Router>
       <AnimatePresence mode="wait">
@@ -89,6 +91,7 @@ function App() {
       </AnimatePresence>
     </Router>
     </CartProvider>
+    </PaymentProvider>
     </AuthProvider>
   );
 }

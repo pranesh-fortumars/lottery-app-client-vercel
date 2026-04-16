@@ -1,21 +1,28 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import PageWrapper from '../components/PageWrapper';
 import { CreditCard, Wallet, ChevronRight, CheckCircle2, QrCode, Landmark, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { usePayment } from '../context/PaymentContext';
+import PaymentModal from '../components/PaymentModal';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 const TopUpPage = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
+  const { activePayment } = usePayment();
   const [amount, setAmount] = useState('100.00');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
 
   const amounts = ['100.00', '200.00', '500.00', '1000.00', '2000.00', '5000.00'];
 
   const handleTopup = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     if (!user) return;
     
+    setShowPayment(false); 
     setIsProcessing(true);
     try {
       const topupVal = parseFloat(amount);
@@ -30,7 +37,7 @@ const TopUpPage = () => {
 
       alert(`Successfully added ₹${topupVal} to your wallet!`);
       setIsProcessing(false);
-      window.history.back();
+      navigate('/home'); // Better to navigate home or profile
     } catch (error) {
       console.error("Topup error:", error);
       alert("Transaction failed! Please try again.");
@@ -94,25 +101,34 @@ const TopUpPage = () => {
               />
            </div>
 
-           <div className="space-y-3 mt-10">
+            <div className="space-y-3 mt-10">
               <button 
-                onClick={handleTopup}
-                disabled={isProcessing}
+                onClick={() => setShowPayment(true)}
                 className="w-full h-16 bg-[#ff0033] text-white py-4 rounded-[1.5rem] font-black tracking-widest text-xs uppercase shadow-xl shadow-red-500/10 active:scale-95 transition-all flex items-center justify-center gap-2"
               >
-                {isProcessing ? 'Processing Transaction...' : 'Confirm Recharge Now'} <ChevronRight size={18} />
+                Proceed to Pay <ChevronRight size={18} />
               </button>
               
               <div className="flex gap-4">
-                 <button className="flex-1 bg-white border border-gray-100 p-4 rounded-xl flex flex-col items-center gap-2 shadow-sm active:bg-red-50 transition-colors cursor-not-allowed opacity-50">
-                    <QrCode size={18} className="text-gray-400" />
-                    <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Pay via UPI</span>
+                 <button 
+                  onClick={() => setShowPayment(true)}
+                  className="flex-1 bg-white border border-gray-100 p-4 rounded-xl flex flex-col items-center gap-2 shadow-sm active:bg-red-50 transition-colors"
+                >
+                    <QrCode size={18} className="text-[#ff0033]" />
+                    <span className="text-[8px] font-black text-gray-800 uppercase tracking-widest">Active UPI QR</span>
                  </button>
-                 <button className="flex-1 bg-white border border-gray-100 p-4 rounded-xl flex flex-col items-center gap-2 shadow-sm active:bg-blue-50 transition-colors cursor-not-allowed opacity-50">
+                 <div className="flex-1 bg-gray-50 border border-gray-100 p-4 rounded-xl flex flex-col items-center gap-2 shadow-sm opacity-50">
                     <Landmark size={18} className="text-gray-400" />
                     <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Bank Transfer</span>
-                 </button>
+                 </div>
               </div>
+              
+              {activePayment && (
+                <div className="mt-6 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                  <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 text-center">Currently Active Payment ID</p>
+                  <p className="text-sm font-black text-gray-800 text-center italic">{activePayment.upiId}</p>
+                </div>
+              )}
            </div>
         </div>
 
@@ -120,6 +136,13 @@ const TopUpPage = () => {
            <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.4em] italic leading-tight">Secured by Diamond Agency Payments Authority Gateway v2.4</p>
         </div>
       </div>
+
+      <PaymentModal 
+        isOpen={showPayment} 
+        onClose={() => setShowPayment(false)} 
+        amount={amount}
+        onConfirm={handleTopup}
+      />
     </PageWrapper>
   );
 };

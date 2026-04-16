@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Diamond } from 'lucide-react';
+import { Mail, Diamond, QrCode } from 'lucide-react';
+import { usePayment } from '../context/PaymentContext';
 
 const CountdownTimer = ({ drawTime }) => {
   const [timeLeft, setTimeLeft] = useState({ h: '00', m: '00', s: '00' });
@@ -51,6 +52,7 @@ const CountdownTimer = ({ drawTime }) => {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { activePayment } = usePayment();
 
   const isClosed = (drawTime) => {
     const now = new Date();
@@ -100,6 +102,31 @@ const Dashboard = () => {
         <Mail size={24} className="text-white fill-white" />
         <span className="text-white font-black ml-2 text-sm tracking-widest uppercase animate-pulse">🔥 HOT JACKPOT ALERT : WIN BIG TODAY!</span>
       </div>
+
+      {/* Active Payment Method Banner - Real-time reflection */}
+      {activePayment && (
+        <div className="mt-4 px-4">
+          <div 
+            onClick={() => navigate('/topup')}
+            className="bg-white border-2 border-dashed border-red-600/30 p-4 rounded-3xl flex items-center justify-between group active:scale-[0.98] transition-all cursor-pointer overflow-hidden relative"
+          >
+            <div className="absolute top-0 right-0 w-24 h-24 bg-red-600/5 rounded-full -mr-10 -mt-10 blur-2xl"></div>
+            <div className="flex items-center gap-4 relative z-10">
+              <div className="w-12 h-12 bg-red-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform">
+                <QrCode className="text-white" size={24} />
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Active Payment ID</p>
+                <p className="text-sm font-black text-gray-800 italic uppercase">{activePayment.upiId}</p>
+                <p className="text-[8px] font-black text-red-600 uppercase tracking-widest mt-0.5">{activePayment.bankName}</p>
+              </div>
+            </div>
+            <button className="bg-red-600 text-white p-2 rounded-xl shadow-lg active:scale-90 transition-all">
+              <Diamond size={16} fill="white" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 3 & 4 Digits Game Title with Diamond Icon */}
       <div className="px-5 py-6 flex items-center gap-3">

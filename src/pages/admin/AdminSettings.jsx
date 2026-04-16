@@ -12,11 +12,15 @@ import {
   Zap,
   Box,
   Key,
-  Clock
+  Clock,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
+import { usePayment } from '../../context/PaymentContext';
 
 const AdminSettings = () => {
   const [activeTab, setActiveTab] = useState('General');
+  const { accounts, activePayment } = usePayment();
 
   const tabs = [
     { id: 'General', icon: Box, label: 'General Info' },
@@ -76,7 +80,8 @@ const AdminSettings = () => {
             <h2 className="text-xl font-black font-condensed uppercase tracking-tighter text-gray-800 italic">{activeTab} Parameters</h2>
          </div>
 
-         <div className="space-y-2">
+         {activeTab === 'General' && (
+          <div className="space-y-2">
             <SettingRow label="Platform Maintenance" desc="Temporarily disable all user features globally for system sync.">
                <div className="relative inline-flex items-center cursor-pointer group origin-left">
                   <input type="checkbox" className="sr-only peer" />
@@ -103,15 +108,58 @@ const AdminSettings = () => {
                </div>
             </SettingRow>
          </div>
+         )}
 
-         <div className="pt-10 grid grid-cols-2 gap-4">
+         {activeTab === 'Financial' && (
+           <div className="space-y-6">
+             <div className="bg-amber-50 p-6 rounded-3xl border border-amber-100 mb-8">
+               <div className="flex gap-3 items-center mb-2">
+                 <AlertCircle className="text-amber-500" size={20} />
+                 <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-900">Rotation Policy</h4>
+               </div>
+               <p className="text-[10px] text-amber-800 font-bold leading-relaxed">
+                 Payment accounts rotate automatically every 2 days. The system selects the active account based on the current date relative to the base reference date.
+               </p>
+             </div>
+
+             <div className="grid grid-cols-1 gap-4">
+               {accounts.map((acc) => {
+                 const isActive = activePayment?.id === acc.id;
+                 return (
+                   <div key={acc.id} className={`p-6 rounded-[2rem] border-2 transition-all ${isActive ? 'bg-white border-[#ff004d] shadow-lg scale-105' : 'bg-gray-50 border-gray-100 opacity-60'}`}>
+                     <div className="flex justify-between items-start mb-4">
+                       <div>
+                         <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Account {acc.id}</p>
+                         <h5 className="text-sm font-black text-gray-800 uppercase italic">{acc.bankName}</h5>
+                       </div>
+                       {isActive && (
+                         <span className="bg-[#ff004d] text-white text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg -rotate-3">Active Now</span>
+                       )}
+                     </div>
+                     <div className="flex items-center gap-4 bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
+                        <img src={acc.qrUrl} alt="QR" className="w-16 h-16 rounded-lg shadow-sm" />
+                        <div className="flex-grow">
+                           <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">UPI ID</p>
+                           <p className="text-xs font-black text-gray-800 truncate">{acc.upiId}</p>
+                        </div>
+                     </div>
+                   </div>
+                 );
+               })}
+             </div>
+           </div>
+         )}
+
+         {activeTab !== 'Financial' && (
+          <div className="pt-10 grid grid-cols-2 gap-4">
             <button className="py-5 bg-gray-900 text-white rounded-2xl font-black text-[12px] uppercase tracking-widest shadow-xl shadow-black/10 active:scale-95 transition-all">
                Store Global Config
             </button>
             <button className="py-5 bg-white border-2 border-dashed border-gray-100 text-gray-300 rounded-2xl font-black text-[12px] uppercase tracking-[0.2em] active:bg-[#fce4ec] active:text-[#ff004d] transition-all">
                Reset Defaults
             </button>
-         </div>
+          </div>
+         )}
       </div>
       
       <div className="pt-8 text-center opacity-30">
