@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageWrapper from '../components/PageWrapper';
-import { ShoppingCart, Trash2, CreditCard, ChevronLeft } from 'lucide-react';
+import { ShoppingCart, Trash2, CreditCard, ChevronLeft, QrCode } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { usePayment } from '../context/PaymentContext';
@@ -17,21 +17,7 @@ const CartPage = () => {
 
   const handlePay = () => {
     if (cart.length === 0) return;
-    
-    // Check if user has enough balance
-    if (user && user.balance >= cartTotal) {
-      // If they have balance, just proceed
-      setIsProcessing(true);
-      setTimeout(() => {
-        confirmPurchase();
-        alert("Purchase Successful! Your tickets are recorded in our system.");
-        setIsProcessing(false);
-        navigate('/tickets');
-      }, 1000);
-    } else {
-      // Otherwise prompt for payment
-      setShowPayment(true);
-    }
+    setShowPayment(true);
   };
 
   const handlePaymentConfirm = async () => {
